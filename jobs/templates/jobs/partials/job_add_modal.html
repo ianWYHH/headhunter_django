@@ -1,0 +1,29 @@
+<div class="modal fade" id="addJobModal" tabindex="-1" aria-labelledby="addJobModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addJobModalLabel">新增职位 (AI 解析)</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="add-job-modal-content">
+                <form hx-post="{% url 'jobs:preview_jobs' %}"
+                      hx-target="#add-job-modal-content"
+                      hx-encoding="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="id_file_upload_job" class="form-label">{{ parse_form.file_upload.label }}</label>
+                        <input type="file" name="file_upload" class="form-control" id="id_file_upload_job">
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_text_content_job" class="form-label">{{ parse_form.text_content.label }}</label>
+                        <textarea name="text_content" cols="40" rows="5" class="form-control" id="id_text_content_job"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <span class="htmx-indicator spinner-border spinner-border-sm"></span>
+                        读取并预览内容
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

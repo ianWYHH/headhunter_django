@@ -1,0 +1,58 @@
+{% extends 'jobs/base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">职位仪表盘</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addJobModal">
+            <i class="bi bi-plus-circle-fill"></i> 新增职位 (AI 解析)
+        </button>
+    </div>
+</div>
+
+<form id="filter-form"
+      hx-get="{% url 'jobs:job_list_partial' %}"
+      hx-target="#job-list-container"
+      hx-trigger="change, keyup delay:300ms from:[name='search']"
+      class="row g-3 mb-4 p-3 bg-light border rounded">
+    <div class="col-md-4">
+        <label for="search" class="form-label">关键词搜索</label>
+        <input type="text" name="search" id="search" class="form-control" placeholder="职位名、公司、技能...">
+    </div>
+    <div class="col-md-3">
+        <label for="company" class="form-label">公司</label>
+        <select name="company" id="company" class="form-select">
+            <option value="">所有公司</option>
+            {% for c in companies %}
+            <option value="{{ c.id }}">{{ c.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-3">
+        <label for="status" class="form-label">状态</label>
+        <select name="status" id="status" class="form-select">
+            <option value="">所有状态</option>
+            {% for key, value in statuses %}
+            <option value="{{ key }}">{{ value }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-2 align-self-end">
+        <button type="submit" class="btn btn-primary w-100">
+            <span class="htmx-indicator spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            筛选
+        </button>
+    </div>
+</form>
+
+<div id="job-list-container"
+     hx-get="{% url 'jobs:job_list_partial' %}"
+     hx-trigger="load">
+    <p class="text-center p-5">
+        <span class="spinner-border" role="status" aria-hidden="true"></span>
+        <span class="ms-2">正在加载职位列表...</span>
+    </p>
+</div>
+
+{% include 'jobs/partials/job_add_modal.html' %}
+{% endblock %}

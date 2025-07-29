@@ -1,0 +1,21 @@
+{% extends 'jobs/base.html' %}
+
+{% block title %}分组详情: {{ group.name }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">分组详情: <span class="fw-normal">{{ group.name }}</span></h1>
+    <a href="{% url 'jobs:group_management' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> 返回分组管理
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        分组内的候选人
+    </div>
+    <div class="card-body" id="group-member-list-container">
+        {% include 'jobs/partials/group_member_list.html' %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,39 @@
+<form id="save-jobs-form" hx-post="{% url 'jobs:save_jobs' %}">
+    {% csrf_token %}
+    <h6>解析结果预览</h6>
+    {% if parsed_items %}
+        <p class="text-muted">请检查并修改后保存。</p>
+        <div class="accordion mt-3" id="parsed-jobs-accordion">
+            {% for item in parsed_items %}
+            {% if "error" not in item %}
+            {% with forloop.counter0 as index %}
+            <div class="accordion-item">
+                <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ index }}">{{ forloop.counter }}. {{ item.title }} - {{ item.company_name }}</button></h2>
+                <div id="collapse-{{ index }}" class="accordion-collapse collapse" data-bs-parent="#parsed-jobs-accordion">
+                    <div class="accordion-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-2"><label class="form-label small">职位名称</label><input type="text" name="form-{{ index }}-title" value="{{ item.title }}" class="form-control form-control-sm"></div>
+                            <div class="col-md-6 mb-2"><label class="form-label small">公司名称</label><input type="text" name="form-{{ index }}-company_name" value="{{ item.company_name }}" class="form-control form-control-sm"></div>
+                            <div class="col-md-6 mb-2"><label class="form-label small">所属部门</label><input type="text" name="form-{{ index }}-department" value="{{ item.department }}" class="form-control form-control-sm"></div>
+                            <div class="col-md-6 mb-2"><label class="form-label small">薪资范围</label><input type="text" name="form-{{ index }}-salary_range" value="{{ item.salary_range }}" class="form-control form-control-sm"></div>
+                            <div class="col-md-6 mb-2"><label class="form-label small">地点</label><input type="text" name="form-{{ index }}-locations" value="{{ item.locations|join:', ' }}" class="form-control form-control-sm"></div>
+                            <div class="col-md-6 mb-2"><label class="form-label small">职级</label><input type="text" name="form-{{ index }}-level_set" value="{{ item.level_set|join:', ' }}" class="form-control form-control-sm"></div>
+                            <div class="col-12 mb-2"><label class="form-label small">关键词</label><input type="text" name="form-{{ index }}-keywords" value="{{ item.keywords|join:', ' }}" class="form-control form-control-sm"></div>
+                            <div class="col-12 mb-2"><label class="form-label small">职位描述</label><textarea name="form-{{ index }}-job_description" class="form-control form-control-sm" rows="5">{{ item.job_description }}</textarea></div>
+                            <div class="col-12 mb-2"><label class="form-label small">职位要求</label><textarea name="form-{{ index }}-job_requirement" class="form-control form-control-sm" rows="5">{{ item.job_requirement }}</textarea></div>
+                            <div class="col-12 mb-2"><label class="form-label small">备注</label><textarea name="form-{{ index }}-notes" class="form-control form-control-sm" rows="3">{{ item.notes }}</textarea></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endwith %}
+            {% endif %}
+            {% endfor %}
+        </div>
+        <div class="mt-3">
+            <button type="submit" class="btn btn-success"><span class="htmx-indicator spinner-border spinner-border-sm"></span> 确认并保存</button>
+        </div>
+    {% else %}
+        <p class="text-danger mt-3">解析失败或没有提取到有效内容。</p>
+    {% endif %}
+</form>

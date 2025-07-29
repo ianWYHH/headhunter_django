@@ -1,0 +1,52 @@
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>操作者</th>
+                <th>发件邮箱</th>
+                <th>收件人</th>
+                <th>主题</th>
+                <th>状态</th>
+                <th>创建时间</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for task in email_tasks %}
+            <tr>
+                <td>{{ task.id }}</td>
+                <td>{{ task.user.username }}</td>
+                <td>{{ task.from_account.email_address }}</td>
+                <td>{{ task.candidate.name }}</td>
+                <td>{{ task.subject|truncatechars:30 }}</td>
+                <td>
+                    <span class="badge
+                        {% if task.status == '成功' %}bg-success
+                        {% elif task.status == '失败' %}bg-danger
+                        {% elif task.status == '已取消' %}bg-secondary
+                        {% else %}bg-warning text-dark{% endif %}">
+                        {{ task.get_status_display }}
+                    </span>
+                </td>
+                <td>{{ task.sent_at|date:"Y-m-d H:i" }}</td>
+                <td>
+                    {% if task.status == '待发送' %}
+                    <button class="btn btn-outline-danger btn-sm"
+                            hx-post="{% url 'jobs:cancel_email_task' task.id %}"
+                            hx-target="#task-list-container"
+                            hx-swap="innerHTML"
+                            hx-confirm="您确定要取消这个发送任务吗？">
+                        取消
+                    </button>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8" class="text-center text-muted p-4">没有邮件任务记录。</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

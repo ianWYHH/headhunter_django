@@ -1,0 +1,35 @@
+{% extends 'jobs/base.html' %}
+{% block title %}注册{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card mt-5">
+            <div class="card-body">
+                <h3 class="card-title text-center mb-4">创建账户</h3>
+                <form method="post">
+                    {% csrf_token %}
+                    {% for field in form %}
+                        <div class="mb-3">
+                            {{ field.label_tag }}
+                            {{ field }}
+                            {% if field.help_text %}
+                                <small class="form-text text-muted">{{ field.help_text|safe }}</small>
+                            {% endif %}
+                            {% for error in field.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">注册</button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-center py-3">
+                <div class="small"><a href="{% url 'login' %}">已有账户？ 登录</a></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

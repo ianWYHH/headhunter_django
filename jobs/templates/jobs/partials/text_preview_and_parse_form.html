@@ -1,0 +1,45 @@
+{% csrf_token %}
+<div class="alert alert-info">
+    <i class="bi bi-check-circle-fill"></i>
+    读取成功！共识别出 <strong>{{ total_items_to_parse }}</strong> 条待解析内容。
+    {% if enabled_models %}
+        请检查下方文本，并选择一个AI模型。
+    {% else %}
+        <span class="text-danger">但您尚未配置任何可用的AI模型。</span>
+    {% endif %}
+</div>
+
+<form id="parse-text-form"
+      hx-post="{% if content_type == 'job' %}{% url 'jobs:parse_jobs' %}{% else %}{% url 'jobs:parse_candidates' %}{% endif %}"
+      hx-target="#parse-results-container"
+      hx-swap="innerHTML">
+    {% csrf_token %}
+    <div class="mb-3">
+        <textarea name="text_content" class="form-control" rows="8">{{ full_text }}</textarea>
+    </div>
+    <div class="row align-items-end">
+        <div class="col-md-6">
+            <label for="model_provider" class="form-label"><strong>选择解析模型</strong></label>
+            <select name="model_provider" id="model_provider" class="form-select" {% if not enabled_models %}disabled{% endif %}>
+                {% if not enabled_models %}
+                    <option value="">请先在“API密钥管理”页面添加密钥</option>
+                {% else %}
+                    {% for key, model in enabled_models.items %}
+                        <option value="{{ key }}">{{ model.name }}</option>
+                    {% endfor %}
+                {% endif %}
+            </select>
+        </div>
+        <div class="col-md-6 text-md-end mt-3 mt-md-0">
+            <button type="submit" class="btn btn-success" {% if not enabled_models %}disabled{% endif %}>
+                <span class="htmx-indicator spinner-border spinner-border-sm"></span>
+                开始AI解析
+            </button>
+        </div>
+    </div>
+</form>
+
+<hr>
+<div id="parse-results-container">
+    <p class="text-muted">AI 解析后的列表将显示在这里。</p>
+</div>

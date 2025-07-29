@@ -1,0 +1,37 @@
+<div class="modal fade" id="addCandidateModal" tabindex="-1" aria-labelledby="addCandidateModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addCandidateModalLabel">新增候选人 (AI 解析)</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="add-candidate-modal-content">
+                <!-- 初始表单，用于第一步：文件上传和读取 -->
+                <!-- (修复) 将 hx-post 指向正确的预览URL -->
+                <form hx-post="{% url 'jobs:preview_candidates' %}"
+                      hx-target="#add-candidate-modal-content"
+                      hx-encoding="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="id_file_upload_candidate" class="form-label">{{ parse_form.file_upload.label }}</label>
+                        <input type="file" name="file_upload" class="form-control" id="id_file_upload_candidate">
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_text_content_candidate" class="form-label">{{ parse_form.text_content.label }}</label>
+                        <textarea name="text_content" cols="40" rows="5" class="form-control" id="id_text_content_candidate"></textarea>
+                    </div>
+                    <p class="form-text text-muted small">提示：如果同时提供了文件和粘贴的文本，系统将优先使用上传的文件。</p>
+                    <button type="submit" class="btn btn-primary">
+                        <span class="htmx-indicator">
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            文件读取中...
+                        </span>
+                        <span class="htmx-request-indicator">
+                           <i class="bi bi-file-earmark-arrow-up"></i> 读取并预览内容
+                        </span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

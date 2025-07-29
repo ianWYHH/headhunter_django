@@ -1,0 +1,22 @@
+{% load widget_tweaks %}
+<div id="log-detail-content-{{ log.id }}">
+    <h6>邮件内容</h6>
+    <pre class="p-2 bg-light border rounded mb-3" style="white-space: pre-wrap; max-height: 200px; overflow-y: auto;">{{ log.content }}</pre>
+    
+    {% if log.status == '失败' %}
+    <h6>失败原因</h6>
+    <pre class="p-2 bg-light-danger border rounded mb-3 text-danger small" style="white-space: pre-wrap;">{{ log.failure_reason }} (重试次数: {{ log.retry_count }})</pre>
+    {% endif %}
+
+    <h6>备注</h6>
+    <form hx-post="{% url 'jobs:save_email_remark' log.id %}" hx-target="#log-detail-content-{{ log.id }}" hx-swap="outerHTML">
+        {% csrf_token %}
+        <div class="mb-2">
+            {% render_field form.remarks class="form-control form-control-sm" %}
+        </div>
+        <button type="submit" class="btn btn-secondary btn-sm">
+            <span class="htmx-indicator spinner-border spinner-border-sm"></span>
+            保存备注
+        </button>
+    </form>
+</div>

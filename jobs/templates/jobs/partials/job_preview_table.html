@@ -1,0 +1,36 @@
+<form id="save-jobs-form" hx-post="{% url 'jobs:save_jobs' %}">
+    {% csrf_token %}
+    <hr>
+    <h6>解析结果预览</h6>
+    {% if parsed_jobs %}
+    <p class="text-muted">共解析出 {{ parsed_jobs|length }} 条职位，确认无误后请点击保存。</p>
+    <textarea name="jobs_data" style="display: none;">{{ parsed_jobs|json_script:"parsed-data"|safe }}</textarea>
+    <button type="submit" class="btn btn-success">全部保存到数据库</button>
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+    {% else %}
+    <p class="text-danger">解析失败或没有有效内容。</p>
+    {% endif %}
+</form>
+
+{% if parsed_jobs %}
+<div class="table-responsive mt-3" style="max-height: 400px; overflow-y: auto;">
+    <table class="table table-bordered table-sm">
+        <thead>
+        <tr>
+            <th>公司</th>
+            <th>职位</th>
+            <th>地点</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for job_data in parsed_jobs %}
+            <tr>
+                <td>{{ job_data.company_name }}</td>
+                <td>{{ job_data.title }}</td>
+                <td>{{ job_data.locations|join:", " }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}

@@ -1,0 +1,72 @@
+{% load widget_tweaks %}
+
+<div id="candidate-detail-panel-{{ candidate.id }}">
+    <ul class="nav nav-tabs" id="detailTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="view-tab-{{ candidate.id }}" data-bs-toggle="tab" data-bs-target="#view-pane-{{ candidate.id }}" type="button">查看详情</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="edit-tab-{{ candidate.id }}" data-bs-toggle="tab" data-bs-target="#edit-pane-{{ candidate.id }}" type="button">编辑候选人</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="match-tab-{{ candidate.id }}" data-bs-toggle="tab" data-bs-target="#match-pane-{{ candidate.id }}" type="button"
+                    hx-get="{% url 'jobs:find_matches' candidate.id %}" hx-target="#match-pane-{{ candidate.id }}" hx-trigger="click once">
+                <i class="bi bi-bullseye"></i> 匹配职位 <span class="htmx-indicator spinner-border spinner-border-sm"></span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="history-tab-{{ candidate.id }}" data-bs-toggle="tab" data-bs-target="#history-pane-{{ candidate.id }}" type="button"
+                    hx-get="{% url 'jobs:email_history' candidate.id %}" hx-target="#history-pane-{{ candidate.id }}" hx-trigger="click once">
+                <i class="bi bi-clock-history"></i> 邮件历史 <span class="htmx-indicator spinner-border spinner-border-sm"></span>
+            </button>
+        </li>
+    </ul>
+    <div class="tab-content pt-3" id="detailTabContent-{{ candidate.id }}">
+        <div class="tab-pane fade show active" id="view-pane-{{ candidate.id }}" role="tabpanel">
+            <h4>{{ candidate.name }}</h4>
+            <p class="text-muted">{{ candidate.emails|join:", " }}</p>
+            <hr>
+            <p><strong>个人主页:</strong> <a href="{{ candidate.homepage }}" target="_blank">{{ candidate.homepage|default:"N/A" }}</a></p>
+            <p><strong>GitHub:</strong> <a href="{{ candidate.github_profile }}" target="_blank">{{ candidate.github_profile|default:"N/A" }}</a></p>
+            <p><strong>领英:</strong> <a href="{{ candidate.linkedin_profile }}" target="_blank">{{ candidate.linkedin_profile|default:"N/A" }}</a></p>
+            <p><strong>外部系统ID:</strong> {{ candidate.external_id|default:"N/A" }}</p>
+            <p><strong>关键词:</strong> <span class="text-break">{{ candidate.keywords|join:", " | default:"N/A" }}</span></p>
+            <hr>
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <button class="btn btn-primary btn-sm"
+                            hx-get="{% url 'jobs:compose_email' candidate.id %}"
+                            hx-target="#offcanvas-content" hx-swap="innerHTML">
+                        <i class="bi bi-envelope"></i> 发送邮件
+                    </button>
+                    <button class="btn btn-danger btn-sm"
+                            hx-post="{% url 'jobs:candidate_delete' candidate.id %}" hx-confirm="您确定要永久删除这位候选人吗？">
+                        <span class="htmx-indicator spinner-border spinner-border-sm"></span> <i class="bi bi-trash-fill"></i> 删除
+                    </button>
+                </div>
+                <small class="text-muted">更新于: {{ candidate.updated_at|date:"Y-m-d H-i" }}</small>
+            </div>
+        </div>
+        <div class="tab-pane fade" id="edit-pane-{{ candidate.id }}" role="tabpanel">
+            <!-- (修复) hx-target 指向父级容器，以实现局部刷新 -->
+            <form hx-post="{% url 'jobs:candidate_detail' candidate.id %}" hx-target="#candidate-detail-panel-{{ candidate.id }}" hx-swap="outerHTML">
+                {% csrf_token %}
+                {% for field in form.visible_fields %}
+                    <div class="mb-3">
+                        {{ field.label_tag }}
+                        {% render_field field class="form-control" %}
+                        {% if field.errors %}<div class="text-danger small">{{ field.errors|striptags }}</div>{% endif %}
+                    </div>
+                {% endfor %}
+                {% for field in form.hidden_fields %}{{ field }}{% endfor %}
+                <button type="submit" class="btn btn-primary"><span class="htmx-indicator spinner-border spinner-border-sm"></span> 保存更改</button>
+            </form>
+        </div>
+        <div class="tab-pane fade" id="match-pane-{{ candidate.id }}" role="tabpanel">
+            <p class="text-center text-muted p-5">点击 "匹配职位" 标签页后开始加载...</p>
+        </div>
+        <div class="tab-pane fade" id="history-pane-{{ candidate.id }}" role="tabpanel">
+            <p class="text-center text-muted p-5">点击 "邮件历史" 标签页后开始加载...</p>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,33 @@
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th scope="col">ID</th>
+                <th scope="col">职位名称</th>
+                <th scope="col">公司</th>
+                <th scope="col">地点</th>
+                <th scope="col">状态</th>
+                <th scope="col">最后更新</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for job in jobs %}
+            <tr hx-get="{% url 'jobs:job_detail' job.id %}"
+                hx-target="#offcanvas-content"
+                hx-swap="innerHTML"
+                style="cursor: pointer;">
+                <td>{{ job.id }}</td>
+                <td>{{ job.title }}</td>
+                <td>{{ job.company.name }}</td>
+                <td>{{ job.locations|join:", " }}</td>
+                <td><span class="badge bg-secondary">{{ job.get_status_display }}</span></td>
+                <td>{{ job.updated_at|date:"Y-m-d" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" class="text-center text-muted p-4">没有找到符合条件的职位。</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

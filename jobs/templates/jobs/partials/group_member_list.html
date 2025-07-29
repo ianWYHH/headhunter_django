@@ -1,0 +1,35 @@
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+            <tr class="no-hover">
+                <th>姓名</th>
+                <th>邮箱</th>
+                <th>关键词</th>
+                <th style="width: 10%;">操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for member in members %}
+            <tr class="no-hover">
+                <td>{{ member.name }}</td>
+                <td>{{ member.emails|join:", " }}</td>
+                <td><span class="text-muted small">{{ member.keywords|join:", "|truncatechars:80 }}</span></td>
+                <td>
+                    <button class="btn btn-warning btn-sm"
+                            hx-post="{% url 'jobs:remove_candidate_from_group' group.id member.id %}"
+                            hx-target="#group-member-list-container"
+                            hx-swap="innerHTML"
+                            hx-confirm="您确定要将 `{{ member.name }}` 从这个分组中移除吗？">
+                        <span class="htmx-indicator spinner-border spinner-border-sm"></span>
+                        <i class="bi bi-person-dash-fill"></i> 移除
+                    </button>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" class="text-center text-muted p-4">该分组内尚无候选人。</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

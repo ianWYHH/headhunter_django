@@ -1,0 +1,30 @@
+{% load widget_tweaks %}
+<form hx-post="{% url 'jobs:compose_email' candidate.id %}" hx-target="#offcanvas-content">
+    {% csrf_token %}
+    <h4>发送邮件给 {{ candidate.name }}</h4>
+    <p class="text-muted">收件人: {{ candidate.emails.0|default:"无有效邮箱" }}</p>
+    <hr>
+    
+    <div class="mb-3">
+        <label for="{{ form.from_account.id_for_label }}" class="form-label">{{ form.from_account.label }}</label>
+        {% render_field form.from_account class="form-select" %}
+    </div>
+    <div class="mb-3">
+        <label for="{{ form.subject.id_for_label }}" class="form-label">{{ form.subject.label }}</label>
+        {% render_field form.subject class="form-control" required="true" %}
+    </div>
+    <div class="mb-3">
+        <label for="{{ form.content.id_for_label }}" class="form-label">{{ form.content.label }}</label>
+        {% render_field form.content class="form-control" required="true" %}
+    </div>
+
+    <button type="submit" class="btn btn-primary" {% if not candidate.emails or not form.fields.from_account.queryset %}disabled{% endif %}>
+        <span class="htmx-indicator spinner-border spinner-border-sm"></span>
+        加入发送队列
+    </button>
+    <button type="button" class="btn btn-secondary"
+            hx-get="{% url 'jobs:candidate_detail' candidate.id %}"
+            hx-target="#offcanvas-content">
+        取消
+    </button>
+</form>

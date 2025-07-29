@@ -1,0 +1,82 @@
+{% extends 'jobs/base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}API密钥管理 - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">API密钥管理</h1>
+</div>
+
+<div class="row">
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-header">
+                添加或更新API密钥
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="{{ form.provider.id_for_label }}" class="form-label">{{ form.provider.label }}</label>
+                        {% render_field form.provider class="form-select" %}
+                        <div class="form-text">选择一个服务商，然后填入您的API Key。如果已存在，则会更新。</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.api_key.id_for_label }}" class="form-label">{{ form.api_key.label }}</label>
+                        {% render_field form.api_key class="form-control" placeholder="例如: sk-xxxxxxxxxxxx" %}
+                    </div>
+                    {% if form.errors %}
+                        <div class="alert alert-danger">
+                            {% for field, error_list in form.errors.items %}
+                                {% for error in error_list %}
+                                    {{ error }}
+                                {% endfor %}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> 保存密钥
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-7">
+        <h6>已保存的密钥</h6>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>服务商</th>
+                        <th>状态</th>
+                        <th>最后更新</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for key in saved_keys %}
+                    <tr>
+                        <td>{{ key.provider|upper }}</td>
+                        <td><span class="badge bg-success">有效</span></td>
+                        <td>{{ key.updated_at|date:"Y-m-d H:i" }}</td>
+                        <td>
+                            <form action="{% url 'jobs:api_key_delete' key.id %}" method="post" onsubmit="return confirm('您确定要删除这个API密钥吗？');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger btn-sm">
+                                    <i class="bi bi-trash"></i> 删除
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center text-muted p-4">尚未添加任何API密钥。</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% if not matched_jobs %}
+    <div class="alert alert-secondary">
+        未找到与候选人“{{ candidate.name }}”匹配的职位。
+    </div>
+{% else %}
+    <p class="text-muted">为“{{ candidate.name }}”找到 {{ matched_jobs|length }} 个匹配职位：</p>
+    <div class="list-group">
+        {% for match in matched_jobs %}
+            <a href="#" 
+               hx-get="{% url 'jobs:job_detail' match.job_id %}"
+               hx-target="#offcanvas-content"
+               hx-swap="innerHTML"
+               class="list-group-item list-group-item-action">
+                <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1">{{ match.title }}</h6>
+                    <small class="text-muted">ID: {{ match.job_id }}</small>
+                </div>
+                <p class="mb-1 small">{{ match.company_name }} | {{ match.locations|join:", " }} | {{ match.level_set|join:", " }}</p>
+                <small><strong>匹配关键词: </strong>
+                    {% for keyword in match.matched_keywords %}
+                        <span class="badge bg-success">{{ keyword }}</span>
+                    {% endfor %}
+                </small>
+            </a>
+        {% endfor %}
+    </div>
+{% endif %}

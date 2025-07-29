@@ -1,0 +1,46 @@
+{% extends 'jobs/base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}{{ action }}邮件模板 - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ action }}邮件模板</h1>
+    <a href="{% url 'jobs:email_settings' %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> 返回邮件设置</a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">{{ form.name.label }}</label>
+                    {% render_field form.name class="form-control" %}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">{{ form.category.label }}</label>
+                    {% render_field form.category class="form-select" %}
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">{{ form.subject.label }}</label>
+                {% render_field form.subject class="form-control" %}
+            </div>
+            <div class="mb-3">
+                <label class="form-label">{{ form.body.label }}</label>
+                {% render_field form.body class="form-control" %}
+                <div class="form-text">
+                    可用占位符: <code>{{candidate.name}}</code>, <code>{{job.title}}</code>, <code>{{job.company.name}}</code>, <code>{{user.username}}</code>, <code>{{user.signature}}</code> 等。
+                </div>
+            </div>
+            {% if form.errors %}
+                <div class="alert alert-danger">
+                    {% for field, errors in form.errors.items %}{{ errors|striptags }}{% endfor %}
+                </div>
+            {% endif %}
+            <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> 保存模板</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
