@@ -31,7 +31,7 @@ urlpatterns = [
     path('candidate/<int:candidate_id>/email-history/', views.email_history_view, name='email_history'),
     path('email-log/<int:log_id>/', views.email_log_detail_view, name='email_log_detail'),
     path('email-log/<int:log_id>/save-remark/', views.save_email_remark_view, name='save_email_remark'),
-    path('load-template/<int:template_id>/', views.load_template_view, name='load_template'),  # (新增)
+    path('load-template/<int:template_id>/', views.load_template_view, name='load_template'),
 
     # 任务与日志
     path('tasks/', views.task_queue_view, name='task_queue'),
@@ -43,9 +43,7 @@ urlpatterns = [
     path('email-settings/template/add/', views.add_template_view, name='add_template'),
     path('email-settings/template/<int:template_id>/edit/', views.edit_template_view, name='edit_template'),
     path('email-settings/template/<int:template_id>/delete/', views.delete_template_view, name='delete_template'),
-    path('email-settings/signature/add/', views.add_signature_view, name='add_signature'),
-    path('email-settings/signature/<int:signature_id>/edit/', views.edit_signature_view, name='edit_signature'),
-    path('email-settings/signature/<int:signature_id>/delete/', views.delete_signature_view, name='delete_signature'),
+    path('email-settings/signature/', views.signature_view, name='signature'),
 
     # 邮箱账户管理
     path('email-accounts/', views.email_account_management_view, name='email_account_management'),
@@ -62,4 +60,5 @@ urlpatterns = [
     path('parse-candidates/', views.parse_and_show_candidates_view, name='parse_candidates'),
     path('save-parsed-jobs/', views.save_parsed_jobs_view, name='save_jobs'),
     path('save-parsed-candidates/', views.save_parsed_candidates_view, name='save_candidates'),
+    path('ai/generate-email/', views.ai_generate_email_view, name='ai_generate_email'),
 ]

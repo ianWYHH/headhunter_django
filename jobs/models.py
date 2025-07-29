@@ -170,7 +170,6 @@ class ActionLog(models.Model):
 
 
 class EmailTemplate(models.Model):
-    """(已更新) 邮件模板模型，所有用户共享"""
     name = models.CharField(max_length=100, unique=True, verbose_name="模板名称")
     subject = models.CharField(max_length=255, verbose_name="邮件主题")
     body = models.TextField(verbose_name="邮件正文", help_text="支持占位符和HTML")
@@ -188,7 +187,6 @@ class EmailTemplate(models.Model):
 
 
 class UserSignature(models.Model):
-    """(已更新) 用户个人邮件签名模型 (每个用户唯一)"""
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="signature", verbose_name="所属用户")
     content = models.TextField(verbose_name="签名内容 (支持HTML)")
     created_at = models.DateTimeField(auto_now_add=True)

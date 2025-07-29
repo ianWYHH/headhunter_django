@@ -7,7 +7,7 @@ from django.contrib import messages
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods, require_POST
-from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseServerError
+from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseServerError, JsonResponse
 from django.conf import settings
 from django.core.paginator import Paginator
 
@@ -21,10 +21,9 @@ from .forms import (
     CustomAuthenticationForm, CustomUserCreationForm, EmailAccountForm,
     EmailTemplateForm, UserSignatureForm
 )
-from .services import parsing_service, matching_service, mailing_service, logging_service
+from .services import parsing_service, matching_service, mailing_service, logging_service, ai_service
 from .utils import encrypt_key
 
-# ... 其他视图保持不变 ...
 # --- 用户认证视图 ---
 def login_view(request):
     if request.user.is_authenticated: return redirect('jobs:index')
@@ -60,7 +59,7 @@ def index(request):
 @login_required
 def job_list_partial(request):
     search_keyword = request.GET.get('search', ''); company_id = request.GET.get('company', ''); status = request.GET.get('status', '')
-    query = Job.objects.select_related('company')
+    query = Job.objects.select_related('company').filter(user=request.user)
     if search_keyword: query = query.filter(Q(title__icontains=search_keyword) | Q(company__name__icontains=search_keyword))
     if company_id: query = query.filter(company_id=company_id)
     if status: query = query.filter(status=status)
@@ -68,7 +67,7 @@ def job_list_partial(request):
 @login_required
 @require_http_methods(["GET", "POST"])
 def job_detail_view(request, job_id):
-    job = get_object_or_404(Job, pk=job_id)
+    job = get_object_or_404(Job, pk=job_id, user=request.user)
     if request.method == 'POST':
         form = JobForm(request.POST, request.FILES, instance=job)
         if form.is_valid():
@@ -80,26 +79,26 @@ def job_detail_view(request, job_id):
 @login_required
 @require_POST
 def job_delete_view(request, job_id):
-    job = get_object_or_404(Job, pk=job_id); job_title = job.title;
+    job = get_object_or_404(Job, pk=job_id, user=request.user); job_title = job.title;
     logging_service.create_log(request.user, "删除职位", job); job.delete()
     messages.success(request, f"职位 '{job_title}' 已被删除。")
     response = HttpResponse(status=204); response['HX-Refresh'] = 'true'; return response
 # --- 候选人管理视图 ---
 @login_required
 def candidate_dashboard_view(request):
-    context = {'parse_form': CandidateParseForm(), 'groups': CandidateGroup.objects.all()}
+    context = {'parse_form': CandidateParseForm(), 'groups': CandidateGroup.objects.filter(user=request.user)}
     return render(request, 'jobs/candidate_dashboard.html', context)
 @login_required
 def candidate_list_partial(request):
     search_keyword = request.GET.get('search', '')
-    query = Candidate.objects.all()
+    query = Candidate.objects.filter(user=request.user)
     if search_keyword:
         query = query.filter(Q(name__icontains=search_keyword) | Q(emails__icontains=search_keyword) | Q(keywords__icontains=search_keyword))
     return render(request, 'jobs/partials/candidate_list_table.html', {'candidates': query})
 @login_required
 @require_http_methods(["GET", "POST"])
 def candidate_detail_view(request, candidate_id):
-    candidate = get_object_or_404(Candidate, pk=candidate_id)
+    candidate = get_object_or_404(Candidate, pk=candidate_id, user=request.user)
     if request.method == 'POST':
         form = CandidateForm(request.POST, instance=candidate)
         if form.is_valid():
@@ -111,7 +110,7 @@ def candidate_detail_view(request, candidate_id):
 @login_required
 @require_POST
 def candidate_delete_view(request, candidate_id):
-    candidate = get_object_or_404(Candidate, pk=candidate_id);
+    candidate = get_object_or_404(Candidate, pk=candidate_id, user=request.user);
     logging_service.create_log(request.user, "删除候选人", candidate)
     candidate_name = candidate.name; candidate.delete()
     messages.success(request, f"候选人 '{candidate_name}' 已被删除。")
@@ -119,8 +118,8 @@ def candidate_delete_view(request, candidate_id):
 @login_required
 @require_http_methods(["GET"])
 def find_matches_view(request, candidate_id):
-    candidate = get_object_or_404(Candidate, pk=candidate_id)
-    matched_jobs = matching_service.find_matching_jobs(candidate)
+    candidate = get_object_or_404(Candidate, pk=candidate_id, user=request.user)
+    matched_jobs = matching_service.find_matching_jobs(candidate, request.user)
     context = {'candidate': candidate, 'matched_jobs': matched_jobs}
     return render(request, 'jobs/partials/matching_results.html', context)
 # --- 分组管理视图 ---
@@ -135,19 +134,19 @@ def group_management_view(request):
             logging_service.create_log(request.user, "创建分组", group)
             return redirect('jobs:group_management')
     else: form = CandidateGroupForm()
-    groups = CandidateGroup.objects.annotate(member_count=Count('candidates')).all()
+    groups = CandidateGroup.objects.filter(user=request.user).annotate(member_count=Count('candidates'))
     context = {'form': form, 'groups': groups}; return render(request, 'jobs/group_management.html', context)
 @login_required
 @require_http_methods(["GET"])
 def group_detail_view(request, group_id):
-    group = get_object_or_404(CandidateGroup, pk=group_id)
+    group = get_object_or_404(CandidateGroup, pk=group_id, user=request.user)
     members = group.candidates.all()
     context = {'group': group, 'members': members}
     return render(request, 'jobs/group_detail.html', context)
 @login_required
 @require_POST
 def remove_candidate_from_group_view(request, group_id, candidate_id):
-    group = get_object_or_404(CandidateGroup, pk=group_id); candidate = get_object_or_404(Candidate, pk=candidate_id)
+    group = get_object_or_404(CandidateGroup, pk=group_id, user=request.user); candidate = get_object_or_404(Candidate, pk=candidate_id, user=request.user)
     candidate.groups.remove(group)
     logging_service.create_log(request.user, f"从分组 '{group.name}' 移除候选人", candidate)
     messages.success(request, f"已将候选人 '{candidate.name}' 从分组 '{group.name}' 中移除。")
@@ -157,7 +156,7 @@ def remove_candidate_from_group_view(request, group_id, candidate_id):
 @login_required
 @require_POST
 def group_delete_view(request, group_id):
-    group = get_object_or_404(CandidateGroup, pk=group_id);
+    group = get_object_or_404(CandidateGroup, pk=group_id, user=request.user);
     logging_service.create_log(request.user, "删除分组", group)
     group_name = group.name; group.delete()
     messages.success(request, f"分组 '{group_name}' 已被删除。"); return redirect('jobs:group_management')
@@ -167,7 +166,7 @@ def add_candidates_to_group_view(request):
     candidate_ids = request.POST.getlist('candidate_ids'); group_id = request.POST.get('group_id')
     if not candidate_ids: messages.warning(request, "您没有选择任何候选人。"); return redirect('jobs:candidate_dashboard')
     if not group_id: messages.warning(request, "您没有选择要添加到的分组。"); return redirect('jobs:candidate_dashboard')
-    group = get_object_or_404(CandidateGroup, pk=group_id); candidates = Candidate.objects.filter(pk__in=candidate_ids)
+    group = get_object_or_404(CandidateGroup, pk=group_id, user=request.user); candidates = Candidate.objects.filter(pk__in=candidate_ids, user=request.user)
     for candidate in candidates: candidate.groups.add(group)
     logging_service.create_log(request.user, f"批量添加 {len(candidate_ids)} 人至分组", group)
     messages.success(request, f"成功将 {len(candidate_ids)} 位候选人添加到分组 '{group.name}'。"); return redirect('jobs:candidate_dashboard')
@@ -175,8 +174,7 @@ def add_candidates_to_group_view(request):
 @login_required
 @require_http_methods(["GET", "POST"])
 def compose_email_view(request, candidate_id):
-    candidate = get_object_or_404(Candidate, pk=candidate_id)
-    templates = EmailTemplate.objects.all()
+    candidate = get_object_or_404(Candidate, pk=candidate_id, user=request.user)
     if request.method == 'POST':
         form = EmailComposeForm(request.user, request.POST)
         if form.is_valid():
@@ -190,13 +188,12 @@ def compose_email_view(request, candidate_id):
             else: messages.warning(request, f"未能为候选人 '{candidate.name}' 创建邮件任务，因为该候选人没有邮箱地址。")
             response = HttpResponse(status=204); response['HX-Refresh'] = 'true'; return response
     else: form = EmailComposeForm(request.user)
-    context = {'form': form, 'candidate': candidate, 'templates': templates}; return render(request, 'jobs/partials/email_compose_form.html', context)
+    context = {'form': form, 'candidate': candidate}; return render(request, 'jobs/partials/email_compose_form.html', context)
 @login_required
 @require_http_methods(["GET", "POST"])
 def compose_group_email_view(request, group_id):
-    group = get_object_or_404(CandidateGroup, pk=group_id)
+    group = get_object_or_404(CandidateGroup, pk=group_id, user=request.user)
     candidates_in_group = group.candidates.all()
-    templates = EmailTemplate.objects.all()
     if request.method == 'POST':
         form = EmailComposeForm(request.user, request.POST)
         if form.is_valid():
@@ -212,12 +209,12 @@ def compose_group_email_view(request, group_id):
             logging_service.create_log(request.user, f"群发邮件至分组", group)
             response = HttpResponse(status=204); response['HX-Refresh'] = 'true'; return response
     else: form = EmailComposeForm(request.user)
-    context = {'form': form, 'group': group, 'recipient_count': candidates_in_group.count(), 'templates': templates}
+    context = {'form': form, 'group': group, 'recipient_count': candidates_in_group.count()}
     return render(request, 'jobs/partials/group_email_compose_form.html', context)
 @login_required
 @require_http_methods(["GET"])
 def email_history_view(request, candidate_id):
-    candidate = get_object_or_404(Candidate, pk=candidate_id)
+    candidate = get_object_or_404(Candidate, pk=candidate_id, user=request.user)
     email_logs = candidate.email_logs.filter(user=request.user)
     context = {'candidate': candidate, 'email_logs': email_logs}; return render(request, 'jobs/partials/email_history_panel.html', context)
 @login_required
@@ -238,11 +235,8 @@ def save_email_remark_view(request, log_id):
     return HttpResponseBadRequest("备注内容无效。")
 @login_required
 def load_template_view(request, template_id):
-    """(新增) HTMX调用的视图，用于加载模板内容"""
     template = get_object_or_404(EmailTemplate, pk=template_id)
-    # 返回一个包含预填表单字段的HTML片段
     return render(request, 'jobs/partials/email_form_fields.html', {'template': template})
-
 # --- 邮箱账户管理视图 ---
 @login_required
 @require_http_methods(["GET", "POST"])
@@ -271,7 +265,6 @@ def email_account_delete_view(request, account_id):
     account_address = account.email_address; account.delete()
     messages.success(request, f"邮箱账户 '{account_address}' 已被删除。")
     return redirect('jobs:email_account_management')
-
 # --- 任务与日志视图 ---
 @login_required
 def task_queue_view(request):
@@ -299,13 +292,15 @@ def action_log_view(request):
     page_obj = paginator.get_page(page_number)
     context = {'page_obj': page_obj}
     return render(request, 'jobs/action_log.html', context)
-
-# --- 邮件设置视图 ---
+# --- 邮件设置 (模板与签名) 视图 ---
 @login_required
 def email_settings_view(request):
     templates = EmailTemplate.objects.select_related('created_by', 'updated_by').all()
-    signatures = UserSignature.objects.filter(user=request.user)
-    context = {'templates': templates, 'signatures': signatures}
+    try:
+        signature = UserSignature.objects.get(user=request.user)
+    except UserSignature.DoesNotExist:
+        signature = None
+    context = {'templates': templates, 'signature': signature}
     return render(request, 'jobs/email_settings.html', context)
 @login_required
 @require_http_methods(["GET", "POST"])
@@ -350,7 +345,7 @@ def delete_template_view(request, template_id):
     return redirect('jobs:email_settings')
 @login_required
 @require_http_methods(["GET", "POST"])
-def add_signature_view(request):
+def signature_view(request):
     signature, created = UserSignature.objects.get_or_create(user=request.user)
     if request.method == 'POST':
         form = UserSignatureForm(request.POST, instance=signature)
@@ -362,29 +357,6 @@ def add_signature_view(request):
     else:
         form = UserSignatureForm(instance=signature)
     return render(request, 'jobs/signature_form.html', {'form': form, 'action': '创建/编辑'})
-@login_required
-@require_http_methods(["GET", "POST"])
-def edit_signature_view(request, signature_id):
-    signature = get_object_or_404(UserSignature, pk=signature_id, user=request.user)
-    if request.method == 'POST':
-        form = UserSignatureForm(request.POST, instance=signature)
-        if form.is_valid():
-            form.save()
-            logging_service.create_log(request.user, "编辑邮件签名", signature)
-            messages.success(request, "签名更新成功。")
-            return redirect('jobs:email_settings')
-    else:
-        form = UserSignatureForm(instance=signature)
-    return render(request, 'jobs/signature_form.html', {'form': form, 'action': '编辑'})
-@login_required
-@require_POST
-def delete_signature_view(request, signature_id):
-    signature = get_object_or_404(UserSignature, pk=signature_id, user=request.user)
-    logging_service.create_log(request.user, "删除邮件签名", signature)
-    signature.delete()
-    messages.success(request, "签名已被删除。")
-    return redirect('jobs:email_settings')
-
 # --- API密钥管理与AI解析流程视图 ---
 @login_required
 @require_http_methods(["GET", "POST"])
@@ -395,8 +367,9 @@ def api_key_management_view(request):
             provider = form.cleaned_data['provider']; api_key = form.cleaned_data['api_key']
             encrypted_key = encrypt_key(api_key)
             key_obj, created = ApiKey.objects.update_or_create(user=request.user, provider=provider, defaults={'api_key_encrypted': encrypted_key})
-            if created: messages.success(request, f"成功为 {provider.upper()} 添加了API密钥。")
-            else: messages.success(request, f"成功更新了 {provider.upper()} 的API密钥。")
+            action = "添加" if created else "更新"
+            messages.success(request, f"成功{action}了 {provider.upper()} 的API密钥。")
+            logging_service.create_log(request.user, f"{action}API密钥", key_obj)
             return redirect('jobs:api_key_management')
     else: form = ApiKeyForm()
     context = {'form': form, 'saved_keys': ApiKey.objects.filter(user=request.user)}; return render(request, 'jobs/api_key_management.html', context)
@@ -404,6 +377,7 @@ def api_key_management_view(request):
 @require_POST
 def api_key_delete_view(request, key_id):
     key_obj = get_object_or_404(ApiKey, pk=key_id, user=request.user);
+    logging_service.create_log(request.user, "删除API密钥", key_obj)
     provider_name = key_obj.provider.upper(); key_obj.delete()
     messages.success(request, f"已删除 {provider_name} 的API密钥。"); return redirect('jobs:api_key_management')
 @login_required
@@ -435,7 +409,7 @@ def _parse_and_show(request, content_type, parse_function, template_name):
         failed_results = [all_results]; parsed_results = []
     elif isinstance(all_results, list):
         failed_results = [res for res in all_results if "error" in res]; parsed_results = [res for res in all_results if "error" not in res]
-    else: failed_results = []; parsed_results = [all_results]
+    else: failed_results = []; parsed_results = [all_results] if isinstance(all_results, dict) else all_results
     if failed_results:
         first_error = failed_results[0]; error_title = first_error.get('error', '未知错误'); error_message = first_error.get('message', '没有更多信息。')
         messages.error(request, f"解析失败 ({error_title}): {error_message}")
@@ -475,7 +449,7 @@ def save_parsed_candidates_view(request):
                     return url_string
                 homepage = sanitize_url(request.POST.get(f'form-{i}-homepage', '')); github_profile = sanitize_url(request.POST.get(f'form-{i}-github_profile', ''))
                 linkedin_profile = sanitize_url(request.POST.get(f'form-{i}-linkedin_profile', '')); external_id_str = request.POST.get(f'form-{i}-external_id')
-                external_id = int(external_id_str) if external_id_str else None
+                external_id = int(external_id_str) if external_id_str and external_id_str.isdigit() else None
                 candidate = Candidate.objects.create(
                     user=request.user, name=request.POST.get(f'form-{i}-name', ''), emails=[s.strip() for s in request.POST.get(f'form-{i}-emails', '').split(',') if s.strip()],
                     homepage=homepage, github_profile=github_profile, linkedin_profile=linkedin_profile, external_id=external_id,
@@ -484,3 +458,44 @@ def save_parsed_candidates_view(request):
                 logging_service.create_log(request.user, "批量创建候选人", candidate)
         messages.success(request, f"成功保存 {saved_count} 条新候选人！"); response = HttpResponse(status=204); response['HX-Refresh'] = 'true'; return response
     except Exception as e: messages.error(request, f"保存候选人时发生严重错误: {e}"); return HttpResponse(status=500)
+
+@login_required
+@require_POST
+def ai_generate_email_view(request):
+    """
+    接收前端请求，调用AI服务生成邮件初稿，并以JSON格式返回。
+    """
+    try:
+        data = json.loads(request.body)
+        keywords = data.get('keywords')
+        job_id = data.get('job_id')
+        provider_key = data.get('provider')
+
+        if not all([keywords, job_id, provider_key]):
+            return JsonResponse({'error': '缺少必要参数 (keywords, job_id, provider)'}, status=400)
+
+        job = get_object_or_404(Job, pk=job_id, user=request.user)
+        job_info = {
+            'title': job.title,
+            'company_name': job.company.name,
+            'salary_range': job.salary_range,
+            'locations': ", ".join(job.locations),
+        }
+
+        result = ai_service.generate_email_draft(
+            keywords=keywords,
+            job=job_info,
+            user_name=request.user.get_full_name() or request.user.username,
+            provider_key=provider_key,
+            user=request.user
+        )
+
+        if 'error' in result:
+             return JsonResponse({'error': result.get('message', 'AI服务返回未知错误')}, status=500)
+
+        return JsonResponse(result)
+
+    except json.JSONDecodeError:
+        return JsonResponse({'error': '无效的JSON请求体'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)

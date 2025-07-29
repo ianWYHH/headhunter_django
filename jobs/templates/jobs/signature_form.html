@@ -14,16 +14,8 @@
         <form method="post">
             {% csrf_token %}
             <div class="mb-3">
-                <label class="form-label">{{ form.name.label }}</label>
-                {% render_field form.name class="form-control" %}
-            </div>
-            <div class="mb-3">
                 <label class="form-label">{{ form.content.label }}</label>
                 {% render_field form.content class="form-control" %}
-            </div>
-            <div class="form-check mb-3">
-                {% render_field form.is_default class="form-check-input" %}
-                <label class="form-check-label" for="{{ form.is_default.id_for_label }}">{{ form.is_default.label }}</label>
             </div>
             {% if form.errors %}
                 <div class="alert alert-danger">

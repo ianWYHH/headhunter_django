@@ -24,18 +24,22 @@
             </div>
             <div class="table-responsive">
                 <table class="table table-striped">
-                    <thead><tr><th>模板名称</th><th>分类</th><th>主题</th><th>最后修改</th><th>操作</th></tr></thead>
+                    <thead><tr><th>模板名称</th><th>标签</th><th>主题</th><th>最后修改</th><th>操作</th></tr></thead>
                     <tbody>
                         {% for template in templates %}
                         <tr>
                             <td>{{ template.name }}</td>
-                            <td><span class="badge bg-info">{{ template.get_category_display }}</span></td>
+                            <td>
+                                {% for tag in template.tags.split|slice:":3" %}
+                                    <span class="badge bg-secondary">{{ tag }}</span>
+                                {% endfor %}
+                            </td>
                             <td>{{ template.subject|truncatechars:50 }}</td>
                             <td>{{ template.updated_at|date:"Y-m-d" }} by {{ template.updated_by.username }}</td>
                             <td>
-                                <a href="{% url 'jobs:edit_template' template.id %}" class="btn btn-sm btn-secondary">编辑</a>
+                                <a href="{% url 'jobs:edit_template' template.id %}" class="btn btn-sm btn-outline-secondary">编辑</a>
                                 <form action="{% url 'jobs:delete_template' template.id %}" method="post" class="d-inline" onsubmit="return confirm('确定删除模板 `{{ template.name }}` 吗？');">
-                                    {% csrf_token %}<button type="submit" class="btn btn-sm btn-danger">删除</button>
+                                    {% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-danger">删除</button>
                                 </form>
                             </td>
                         </tr>
@@ -51,31 +55,19 @@
     <!-- 我的签名 Tab -->
     <div class="tab-pane fade" id="nav-signatures" role="tabpanel">
         <div class="card card-body border-top-0">
-            <div class="d-flex justify-content-end mb-3">
-                <a href="{% url 'jobs:add_signature' %}" class="btn btn-primary"><i class="bi bi-plus-circle"></i> 新建签名</a>
+             <div class="d-flex justify-content-end mb-3">
+                <a href="{% url 'jobs:signature' %}" class="btn btn-primary"><i class="bi bi-pencil-square"></i> {% if signature %}编辑签名{% else %}创建签名{% endif %}</a>
             </div>
-            <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead><tr><th>签名名称</th><th>默认</th><th>最后更新</th><th>操作</th></tr></thead>
-                    <tbody>
-                        {% for signature in signatures %}
-                        <tr>
-                            <td>{{ signature.name }}</td>
-                            <td>{% if signature.is_default %}<span class="badge bg-success">是</span>{% endif %}</td>
-                            <td>{{ signature.updated_at|date:"Y-m-d" }}</td>
-                            <td>
-                                <a href="{% url 'jobs:edit_signature' signature.id %}" class="btn btn-sm btn-secondary">编辑</a>
-                                <form action="{% url 'jobs:delete_signature' signature.id %}" method="post" class="d-inline" onsubmit="return confirm('确定删除签名 `{{ signature.name }}` 吗？');">
-                                    {% csrf_token %}<button type="submit" class="btn btn-sm btn-danger">删除</button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr><td colspan="4" class="text-center text-muted p-4">您尚未创建任何签名。</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+            {% if signature %}
+                <div class="card">
+                    <div class="card-header">当前签名预览</div>
+                    <div class="card-body">
+                        {{ signature.content|safe }}
+                    </div>
+                </div>
+            {% else %}
+                 <div class="text-center text-muted p-4">您尚未创建任何签名。</div>
+            {% endif %}
         </div>
     </div>
 </div>

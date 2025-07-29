@@ -5,7 +5,7 @@ import openai
 import pandas
 import docx
 from django.conf import settings
-from ..models import ApiKey
+from ..models import ApiKey, User
 from ..utils import decrypt_key
 
 # 定义标准化的关键词列表
@@ -17,7 +17,7 @@ STANDARDIZED_KEYWORDS = [
     "Recommendation Systems", "Graph Neural Networks", "Multimodality"
 ]
 
-def _call_ai_model(prompt: str, provider_key: str):
+def _call_ai_model(prompt: str, provider_key: str, user: User):
     """一个通用的、私有的AI模型调用函数。"""
     model_config = settings.AI_MODELS.get(provider_key)
     if not model_config:
@@ -31,10 +31,10 @@ def _call_ai_model(prompt: str, provider_key: str):
         return {"error": "配置不完整", "message": f"模型 '{provider_key}' 在settings.py中的配置不完整。"}
 
     try:
-        api_key_obj = ApiKey.objects.get(provider=provider_for_db_lookup)
+        api_key_obj = ApiKey.objects.get(user=user, provider=provider_for_db_lookup)
         api_key = decrypt_key(api_key_obj.api_key_encrypted)
     except ApiKey.DoesNotExist:
-        return {"error": "密钥缺失", "message": f"未在数据库中找到服务商 '{provider_for_db_lookup.upper()}' 的API密钥，请先在“API密钥管理”页面添加。"}
+        return {"error": "密钥缺失", "message": f"未在数据库中找到您为服务商 '{provider_for_db_lookup.upper()}' 配置的API密钥，请先在“API密钥管理”页面添加。"}
 
     if not api_key:
         return {"error": "密钥无效", "message": "从数据库解密后的API密钥为空。"}
@@ -46,10 +46,11 @@ def _call_ai_model(prompt: str, provider_key: str):
         completion_params = {'model': model_name, 'messages': messages, 'temperature': 0.1, 'response_format': {"type": "json_object"}}
         completion = client.chat.completions.create(**completion_params)
         content = completion.choices[0].message.content
-        # AI有时会返回一个包含 "jobs" 键的根对象，我们需要从中提取数组
         data = json.loads(content)
         if isinstance(data, dict) and "jobs" in data and isinstance(data["jobs"], list):
             return data["jobs"]
+        if isinstance(data, dict) and "candidates" in data and isinstance(data["candidates"], list):
+            return data["candidates"]
         return data
     except openai.AuthenticationError:
         return {"error": "认证失败", "message": f"服务商 '{provider_for_db_lookup.upper()}' 的API密钥无效、过期或权限不足。请检查并更新密钥。"}
@@ -65,8 +66,8 @@ def _call_ai_model(prompt: str, provider_key: str):
         logging.error(f"调用 {provider_for_db_lookup} API时发生未知错误: {e}")
         return {"error": "未知错误", "message": f"调用API时发生未知错误: {e}"}
 
-def parse_multiple_job_descriptions(text: str, provider_key: str):
-    """(已重构) 解析可能包含多个职位的文本块"""
+def parse_multiple_job_descriptions(text: str, provider_key: str, user: User):
+    """解析可能包含多个职位的文本块"""
     keyword_list_str = ", ".join(STANDARDIZED_KEYWORDS)
     prompt = f"""
     你是一个专业的HR助手，负责将非结构化的职位描述(JD)文本精确地解析为结构化的JSON对象数组。
@@ -100,23 +101,26 @@ def parse_multiple_job_descriptions(text: str, provider_key: str):
     ---
     {text}
     """
-    return _call_ai_model(prompt, provider_key)
+    return _call_ai_model(prompt, provider_key, user)
 
-def parse_candidate_resume(text: str, provider_key: str):
+def parse_candidate_resume(text: str, provider_key: str, user: User):
     """解析候选人简历"""
     keyword_list_str = ", ".join(STANDARDIZED_KEYWORDS)
     prompt = f"""
     你是一个专业的HR助手，负责将候选人简历文本精确地解析为结构化的JSON对象。
     **关键词提取约束**: 对于 "keywords" 字段，你必须只从下面的列表中提取与简历内容匹配的关键词。忽略所有编程语言、工具或框架。
     **允许的关键词列表**: {keyword_list_str}
-    **JSON输出格式**:
-    - "name": string
-    - "emails": string[]
-    - "homepage": string
-    - "github_profile": string
-    - "linkedin_profile": string
-    - "external_id": integer | (可选) 候选人在其他系统中的数字ID
-    - "keywords": string[] (必须来自上面的允许列表)
+    **最终输出格式**:
+    你必须返回一个根键为 "candidates" 的JSON对象，其值是一个JSON数组 `[]`。
+    {{
+        "name": string,
+        "emails": string[],
+        "homepage": string,
+        "github_profile": string,
+        "linkedin_profile": string,
+        "external_id": integer | (可选) 候选人在其他系统中的数字ID,
+        "keywords": string[] (必须来自上面的允许列表)
+    }}
     **规则**:
     1. 如果某个字段找不到信息，请使用空字符串 ""、空数组 [] 或 null。
     2. 返回结果必须是一个能被`json.loads()`直接解析的、纯净的JSON对象。
@@ -124,7 +128,7 @@ def parse_candidate_resume(text: str, provider_key: str):
     ---
     {text}
     """
-    return _call_ai_model(prompt, provider_key)
+    return _call_ai_model(prompt, provider_key, user)
 
 def get_texts_from_file(file):
     """从上传的文件中提取文本列表 (支持TXT, XLSX, DOCX)"""

@@ -19,10 +19,10 @@ def create_email_task(
 ) -> EmailLog:
     """
     创建一封待发送的邮件并存入数据库队列。
-    邮件内容此时应包含占位符。
+    邮件内容此时应包含占位符，将在发送时被渲染。
     """
     if not candidate.emails:
-        logging.warning(f"候选人 {candidate.name} (ID: {candidate.id}) 没有邮箱地址，无法创建邮件任务。")
+        logging.warning(f"Candidate {candidate.name} (ID: {candidate.id}) has no email address, skipping task creation.")
         return None
 
     log_entry = EmailLog.objects.create(
@@ -31,20 +31,20 @@ def create_email_task(
         candidate=candidate,
         job=job,
         group=group,
-        subject=subject,
-        content=content,
+        subject=subject,  # Store subject with placeholders
+        content=content,  # Store content with placeholders
         status=EmailLog.EmailStatus.PENDING,
         trigger_type=trigger_type
     )
     logging.info(
-        f"已为候选人 {candidate.name} 创建邮件任务 (ID: {log_entry.id})，使用邮箱 {from_account.email_address}。")
+        f"Email task (ID: {log_entry.id}) created for candidate {candidate.name} using account {from_account.email_address}.")
     return log_entry
 
 
 def process_pending_emails(max_retries: int = 3):
     """
     处理邮件发送队列的核心逻辑。
-    这个函数应该由一个后台定时任务来调用。
+    这个函数由后台定时任务(send_queued_emails)调用。
     """
     emails_to_send = EmailLog.objects.filter(
         status__in=[EmailLog.EmailStatus.PENDING, EmailLog.EmailStatus.FAILED],
@@ -56,23 +56,25 @@ def process_pending_emails(max_retries: int = 3):
 
     for log_entry in emails_to_send:
         try:
+            # 确保所有必要的关联对象都存在
             if not all([log_entry.candidate, log_entry.candidate.emails, log_entry.from_account, log_entry.user]):
-                raise ValueError("邮件任务缺少候选人、收件箱、发件箱或用户信息。")
+                raise ValueError("Task is missing required information (candidate, recipient, sender, or user).")
 
             logging.info(
-                f"正在处理邮件任务 ID: {log_entry.id}，发件人: {log_entry.from_account.email_address}，收件人: {log_entry.candidate.emails[0]}")
+                f"Processing email task ID: {log_entry.id}, from: {log_entry.from_account.email_address}, to: {log_entry.candidate.emails[0]}")
 
-            # (核心升级) 在发送前渲染模板
-            rendered_subject = template_service.render_template(log_entry.subject, log_entry.candidate, log_entry.job,
-                                                                log_entry.user)
-            rendered_content = template_service.render_template(log_entry.content, log_entry.candidate, log_entry.job,
-                                                                log_entry.user)
+            # **核心升级**: 在发送前渲染模板，替换占位符
+            rendered_subject = template_service.render_template(log_entry.subject, log_entry.candidate, log_entry.job, log_entry.user)
+            rendered_content = template_service.render_template(log_entry.content, log_entry.candidate, log_entry.job, log_entry.user)
 
+            # 解密发件箱密码
             password = decrypt_key(log_entry.from_account.smtp_password_encrypted)
 
+            # 使用Django内置的send_mail发送邮件
             send_mail(
                 subject=rendered_subject,
-                message=rendered_content,  # 发送纯文本邮件
+                message=rendered_content,  # Django会自动处理HTML，但这里我们只发送纯文本
+                html_message=rendered_content, # 为支持HTML格式的邮件客户端提供HTML版本
                 from_email=log_entry.from_account.email_address,
                 recipient_list=[log_entry.candidate.emails[0]],
                 fail_silently=False,
@@ -80,18 +82,20 @@ def process_pending_emails(max_retries: int = 3):
                 auth_password=password,
             )
 
+            # 更新任务状态为成功
             log_entry.status = EmailLog.EmailStatus.SUCCESS
             log_entry.sent_at = timezone.now()
             log_entry.save()
             sent_count += 1
-            logging.info(f"邮件任务 ID: {log_entry.id} 发送成功。")
+            logging.info(f"Email task ID: {log_entry.id} sent successfully.")
 
         except Exception as e:
+            # 更新任务状态为失败，并记录原因和重试次数
             log_entry.status = EmailLog.EmailStatus.FAILED
             log_entry.failure_reason = str(e)
             log_entry.retry_count += 1
             log_entry.save()
             failed_count += 1
-            logging.error(f"邮件任务 ID: {log_entry.id} 发送失败 (第 {log_entry.retry_count} 次尝试): {e}")
+            logging.error(f"Email task ID: {log_entry.id} failed (Attempt {log_entry.retry_count}): {e}")
 
     return {"sent": sent_count, "failed": failed_count}
