@@ -5,69 +5,40 @@
 
 {% block content %}
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">邮件设置</h1>
+    <h1 class="h2">邮件模板管理</h1>
 </div>
 
-<nav>
-    <div class="nav nav-tabs" id="nav-tab" role="tablist">
-        <button class="nav-link active" id="nav-templates-tab" data-bs-toggle="tab" data-bs-target="#nav-templates" type="button" role="tab">邮件模板管理</button>
-        <button class="nav-link" id="nav-signatures-tab" data-bs-toggle="tab" data-bs-target="#nav-signatures" type="button" role="tab">我的签名管理</button>
-    </div>
-</nav>
-
-<div class="tab-content" id="nav-tabContent">
-    <!-- 邮件模板 Tab -->
-    <div class="tab-pane fade show active" id="nav-templates" role="tabpanel">
-        <div class="card card-body border-top-0">
-            <div class="d-flex justify-content-end mb-3">
-                <a href="{% url 'jobs:add_template' %}" class="btn btn-primary"><i class="bi bi-plus-circle"></i> 新建模板</a>
-            </div>
-            <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead><tr><th>模板名称</th><th>标签</th><th>主题</th><th>最后修改</th><th>操作</th></tr></thead>
-                    <tbody>
-                        {% for template in templates %}
-                        <tr>
-                            <td>{{ template.name }}</td>
-                            <td>
-                                {% for tag in template.tags.split|slice:":3" %}
-                                    <span class="badge bg-secondary">{{ tag }}</span>
-                                {% endfor %}
-                            </td>
-                            <td>{{ template.subject|truncatechars:50 }}</td>
-                            <td>{{ template.updated_at|date:"Y-m-d" }} by {{ template.updated_by.username }}</td>
-                            <td>
-                                <a href="{% url 'jobs:edit_template' template.id %}" class="btn btn-sm btn-outline-secondary">编辑</a>
-                                <form action="{% url 'jobs:delete_template' template.id %}" method="post" class="d-inline" onsubmit="return confirm('确定删除模板 `{{ template.name }}` 吗？');">
-                                    {% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-danger">删除</button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr><td colspan="5" class="text-center text-muted p-4">尚未创建任何邮件模板。</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+<div class="card">
+    <div class="card-body">
+        <div class="d-flex justify-content-end mb-3">
+            <a href="{% url 'jobs:add_template' %}" class="btn btn-primary"><i class="bi bi-plus-circle"></i> 新建模板</a>
         </div>
-    </div>
-
-    <!-- 我的签名 Tab -->
-    <div class="tab-pane fade" id="nav-signatures" role="tabpanel">
-        <div class="card card-body border-top-0">
-             <div class="d-flex justify-content-end mb-3">
-                <a href="{% url 'jobs:signature' %}" class="btn btn-primary"><i class="bi bi-pencil-square"></i> {% if signature %}编辑签名{% else %}创建签名{% endif %}</a>
-            </div>
-            {% if signature %}
-                <div class="card">
-                    <div class="card-header">当前签名预览</div>
-                    <div class="card-body">
-                        {{ signature.content|safe }}
-                    </div>
-                </div>
-            {% else %}
-                 <div class="text-center text-muted p-4">您尚未创建任何签名。</div>
-            {% endif %}
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead><tr><th>模板名称</th><th>标签</th><th>主题</th><th>最后修改</th><th>操作</th></tr></thead>
+                <tbody>
+                    {% for template in templates %}
+                    <tr>
+                        <td>{{ template.name }}</td>
+                        <td>
+                            {% for tag in template.tags.split|slice:":3" %}
+                                <span class="badge bg-secondary">{{ tag }}</span>
+                            {% endfor %}
+                        </td>
+                        <td>{{ template.subject|truncatechars:50 }}</td>
+                        <td>{{ template.updated_at|date:"Y-m-d" }} by {{ template.updated_by.username }}</td>
+                        <td>
+                            <a href="{% url 'jobs:edit_template' template.id %}" class="btn btn-sm btn-outline-secondary">编辑</a>
+                            <form action="{% url 'jobs:delete_template' template.id %}" method="post" class="d-inline" onsubmit="return confirm('确定删除模板 `{{ template.name }}` 吗？');">
+                                {% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-danger">删除</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" class="text-center text-muted p-4">尚未创建任何邮件模板。</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 </div>

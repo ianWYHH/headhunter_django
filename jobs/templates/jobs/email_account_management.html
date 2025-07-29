@@ -8,65 +8,18 @@
     <h1 class="h2">邮箱账户管理</h1>
 </div>
 
-<div class="row">
-    <div class="col-md-5">
-        <div class="card">
-            <div class="card-header">
-                添加或更新邮箱账户
-            </div>
-            <div class="card-body">
-                <form method="post">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label class="form-label">{{ form.email_address.label }}</label>
-                        {% render_field form.email_address class="form-control" %}
-                    </div>
-                    <div class="row">
-                        <div class="col-md-8 mb-3">
-                            <label class="form-label">{{ form.smtp_host.label }}</label>
-                            {% render_field form.smtp_host class="form-control" placeholder="例如: smtp.example.com" %}
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">{{ form.smtp_port.label }}</label>
-                            {% render_field form.smtp_port class="form-control" placeholder="例如: 465" %}
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">{{ form.smtp_password.label }}</label>
-                        {% render_field form.smtp_password class="form-control" %}
-                    </div>
-                    <div class="form-check mb-3">
-                        {% render_field form.use_ssl class="form-check-input" %}
-                        <label class="form-check-label" for="{{ form.use_ssl.id_for_label }}">{{ form.use_ssl.label }}</label>
-                    </div>
-                    <div class="form-check mb-3">
-                        {% render_field form.is_default class="form-check-input" %}
-                        <label class="form-check-label" for="{{ form.is_default.id_for_label }}">{{ form.is_default.label }}</label>
-                    </div>
-                    {% if form.errors %}
-                        <div class="alert alert-danger">
-                            {% for field, error_list in form.errors.items %}
-                                {% for error in error_list %}
-                                    {{ error }}
-                                {% endfor %}
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                    <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-save"></i> 保存配置
-                    </button>
-                </form>
-            </div>
+<div class="card">
+    <div class="card-body">
+        <div class="d-flex justify-content-end mb-3">
+            <a href="{% url 'jobs:email_account_add' %}" class="btn btn-primary"><i class="bi bi-plus-circle"></i> 添加新账户</a>
         </div>
-    </div>
-    <div class="col-md-7">
-        <h6>我配置的邮箱</h6>
         <div class="table-responsive">
             <table class="table table-striped">
                 <thead>
                     <tr>
                         <th>邮箱地址</th>
-                        <th>默认</th>
+                        <th>默认发件箱</th>
+                        <th>每日上限</th>
                         <th>最后更新</th>
                         <th>操作</th>
                     </tr>
@@ -76,19 +29,18 @@
                     <tr>
                         <td>{{ account.email_address }}</td>
                         <td>{% if account.is_default %}<span class="badge bg-success">是</span>{% endif %}</td>
+                        <td>{{ account.daily_send_limit }}</td>
                         <td>{{ account.updated_at|date:"Y-m-d H:i" }}</td>
                         <td>
-                            <form action="{% url 'jobs:email_account_delete' account.id %}" method="post" onsubmit="return confirm('您确定要删除这个邮箱配置吗？');">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-danger btn-sm">
-                                    <i class="bi bi-trash"></i> 删除
-                                </button>
+                            <a href="{% url 'jobs:email_account_edit' account.id %}" class="btn btn-sm btn-outline-secondary">编辑</a>
+                            <form action="{% url 'jobs:email_account_delete' account.id %}" method="post" class="d-inline" onsubmit="return confirm('确定删除邮箱账户 `{{ account.email_address }}` 吗？');">
+                                {% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-danger">删除</button>
                             </form>
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="4" class="text-center text-muted p-4">尚未配置任何邮箱账户。</td>
+                        <td colspan="5" class="text-center text-muted p-4">您尚未配置任何邮箱账户。</td>
                     </tr>
                     {% endfor %}
                 </tbody>

@@ -116,6 +116,12 @@ class EmailAccount(models.Model):
     smtp_password_encrypted = models.BinaryField(verbose_name="加密后的密码/授权码")
     use_ssl = models.BooleanField(default=True, verbose_name="使用SSL")
     is_default = models.BooleanField(default=False, verbose_name="是否为默认邮箱")
+    # **新增字段**
+    signature = models.TextField(blank=True, null=True, verbose_name="邮箱签名 (支持HTML)")
+    daily_send_limit = models.PositiveIntegerField(default=200, verbose_name="每日发送上限")
+    imap_host = models.CharField(max_length=255, blank=True, null=True, verbose_name="IMAP服务器")
+    imap_port = models.PositiveIntegerField(blank=True, null=True, verbose_name="IMAP端口")
+    imap_use_ssl = models.BooleanField(default=True, verbose_name="IMAP使用SSL")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="更新时间")
 
@@ -151,7 +157,6 @@ class EmailLog(models.Model):
     trigger_type = models.CharField(max_length=50, choices=TriggerType.choices, default=TriggerType.MANUAL,
                                     verbose_name="触发方式")
     remarks = models.TextField(blank=True, null=True, verbose_name="备注")
-    # **新增字段**
     message_id = models.CharField(max_length=255, blank=True, null=True, db_index=True, verbose_name="服务商消息ID")
     is_opened = models.BooleanField(default=False, verbose_name="是否打开")
     opened_at = models.DateTimeField(blank=True, null=True, verbose_name="首次打开时间")
@@ -191,12 +196,25 @@ class EmailTemplate(models.Model):
     class Meta: ordering = ['name']; verbose_name = "邮件模板"; verbose_name_plural = "邮件模板"
 
 
-class UserSignature(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="signature", verbose_name="所属用户")
-    content = models.TextField(verbose_name="签名内容 (支持HTML)")
+# **新增模型**
+class EmailReply(models.Model):
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name="处理人")
+    in_reply_to = models.ForeignKey(EmailLog, on_delete=models.SET_NULL, null=True, blank=True, related_name='replies',
+                                    verbose_name="回复的邮件")
+    candidate = models.ForeignKey(Candidate, on_delete=models.CASCADE, related_name='replies',
+                                  verbose_name="发件候选人")
+    from_email = models.EmailField(verbose_name="发件人邮箱")
+    to_account = models.ForeignKey(EmailAccount, on_delete=models.CASCADE, related_name='replies',
+                                   verbose_name="收件账户")
+    subject = models.CharField(max_length=255, verbose_name="邮件主题")
+    body = models.TextField(verbose_name="邮件正文")
+    received_at = models.DateTimeField(verbose_name="收到时间")
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
-    def __str__(self): return f"Signature for {self.user.username}"
+    def __str__(self):
+        return f"Reply from {self.candidate.name} to {self.to_account.email_address}"
 
-    class Meta: verbose_name = "用户签名"; verbose_name_plural = "用户签名"
+    class Meta:
+        ordering = ['-received_at']
+        verbose_name = "邮件回复"
+        verbose_name_plural = "邮件回复"

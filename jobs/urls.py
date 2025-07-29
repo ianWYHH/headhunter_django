@@ -49,10 +49,11 @@ urlpatterns = [
     path('email-settings/template/add/', views.add_template_view, name='add_template'),
     path('email-settings/template/<int:template_id>/edit/', views.edit_template_view, name='edit_template'),
     path('email-settings/template/<int:template_id>/delete/', views.delete_template_view, name='delete_template'),
-    path('email-settings/signature/', views.signature_view, name='signature'),
 
     # 邮箱账户管理
-    path('email-accounts/', views.email_account_management_view, name='email_account_management'),
+    path('email-accounts/', views.email_account_list_view, name='email_account_management'),
+    path('email-accounts/add/', views.email_account_add_view, name='email_account_add'),
+    path('email-accounts/<int:account_id>/edit/', views.email_account_edit_view, name='email_account_edit'),
     path('email-accounts/<int:account_id>/delete/', views.email_account_delete_view, name='email_account_delete'),
 
     # API密钥管理

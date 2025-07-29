@@ -3,7 +3,7 @@ from django.conf import settings
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from .models import (
     Job, Candidate, CandidateGroup, EmailLog, EmailAccount,
-    EmailTemplate, UserSignature, Company
+    EmailTemplate,  Company
 )
 
 
@@ -120,13 +120,31 @@ class CandidateGroupForm(forms.ModelForm):
 
 
 class EmailAccountForm(forms.ModelForm):
-    smtp_password = forms.CharField(label="密码/授权码", widget=forms.PasswordInput, required=True)
+    # **核心改动**: 将密码字段设为非必填，以便在编辑时无需重新输入
+    smtp_password = forms.CharField(
+        label="密码/授权码",
+        widget=forms.PasswordInput(render_value=True), # render_value helps to show '*****'
+        required=False,
+        help_text="仅在新建或需要更新密码时填写。"
+    )
 
     class Meta:
         model = EmailAccount
-        fields = ['email_address', 'smtp_host', 'smtp_port', 'use_ssl', 'is_default']
-        labels = {'email_address': '邮箱地址', 'smtp_host': 'SMTP服务器', 'smtp_port': '端口', 'use_ssl': '使用SSL加密',
-                  'is_default': '设为默认发件箱'}
+        # **核心改动**: 加入所有新字段
+        fields = [
+            'email_address', 'is_default', 'signature', 'daily_send_limit',
+            'smtp_host', 'smtp_port', 'use_ssl',
+            'imap_host', 'imap_port', 'imap_use_ssl'
+        ]
+        labels = {
+            'email_address': '邮箱地址', 'is_default': '设为默认发件箱',
+            'signature': '邮箱签名 (支持HTML)', 'daily_send_limit': '每日发送上限',
+            'smtp_host': 'SMTP服务器', 'smtp_port': 'SMTP端口', 'use_ssl': 'SMTP使用SSL',
+            'imap_host': 'IMAP服务器', 'imap_port': 'IMAP端口', 'imap_use_ssl': 'IMAP使用SSL'
+        }
+        widgets = {
+            'signature': forms.Textarea(attrs={'rows': 5}),
+        }
 
 
 class EmailComposeForm(forms.Form):
@@ -163,10 +181,3 @@ class EmailTemplateForm(forms.ModelForm):
         labels = {'name': '模板名称', 'tags': '标签 (逗号分隔)', 'subject': '邮件主题', 'body': '邮件正文'}
         widgets = {'body': forms.Textarea(attrs={'rows': 12})}
 
-
-class UserSignatureForm(forms.ModelForm):
-    class Meta:
-        model = UserSignature
-        fields = ['content']
-        labels = {'content': '签名内容 (支持HTML)'}
-        widgets = {'content': forms.Textarea(attrs={'rows': 5})}

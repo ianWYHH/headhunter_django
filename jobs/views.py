@@ -13,13 +13,13 @@ from django.core.paginator import Paginator
 
 from .models import (
     Job, Company, ApiKey, Candidate, CandidateGroup, EmailLog, EmailAccount,
-    ActionLog, EmailTemplate, UserSignature
+    ActionLog, EmailTemplate
 )
 from .forms import (
     JobForm, JobParseForm, ApiKeyForm, CandidateForm,
     CandidateParseForm, CandidateGroupForm, EmailComposeForm, EmailRemarkForm,
     CustomAuthenticationForm, CustomUserCreationForm, EmailAccountForm,
-    EmailTemplateForm, UserSignatureForm
+    EmailTemplateForm
 )
 from .services import parsing_service, matching_service, mailing_service, logging_service, ai_service
 from .utils import encrypt_key
@@ -500,11 +500,8 @@ def action_log_view(request):
 @login_required
 def email_settings_view(request):
     templates = EmailTemplate.objects.select_related('created_by', 'updated_by').all()
-    try:
-        signature = UserSignature.objects.get(user=request.user)
-    except UserSignature.DoesNotExist:
-        signature = None
-    context = {'templates': templates, 'signature': signature}
+    # **核心改动**: 移除所有与 UserSignature 相关的逻辑
+    context = {'templates': templates}
     return render(request, 'jobs/email_settings.html', context)
 
 
@@ -597,18 +594,6 @@ def delete_template_view(request, template_id):
 
 @login_required
 @require_http_methods(["GET", "POST"])
-def signature_view(request):
-    signature, created = UserSignature.objects.get_or_create(user=request.user)
-    if request.method == 'POST':
-        form = UserSignatureForm(request.POST, instance=signature)
-        if form.is_valid():
-            form.save()
-            logging_service.create_log(request.user, "创建/更新邮件签名")
-            messages.success(request, "签名保存成功。")
-            return redirect('jobs:email_settings')
-    else:
-        form = UserSignatureForm(instance=signature)
-    return render(request, 'jobs/signature_form.html', {'form': form, 'action': '创建/编辑'})
 
 
 # --- API密钥管理与AI解析流程视图 ---
@@ -743,6 +728,62 @@ def save_parsed_jobs_view(request):
         return response
     except Exception as e:
         messages.error(request, f"保存职位时发生严重错误: {e}"); return HttpResponse(status=500)
+
+
+# --- 邮箱账户管理视图 (重构) ---
+@login_required
+def email_account_list_view(request):
+    accounts = EmailAccount.objects.filter(user=request.user)
+    context = {'accounts': accounts}
+    return render(request, 'jobs/email_account_management.html', context)
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def email_account_add_view(request):
+    if request.method == 'POST':
+        form = EmailAccountForm(request.POST)
+        if form.is_valid():
+            account = form.save(commit=False)
+            account.user = request.user
+            # 密码是必填的
+            if not form.cleaned_data['smtp_password']:
+                form.add_error('smtp_password', '新建邮箱账户时必须提供密码/授权码。')
+            else:
+                account.smtp_password_encrypted = encrypt_key(form.cleaned_data['smtp_password'])
+                if account.is_default:
+                    EmailAccount.objects.filter(user=request.user).update(is_default=False)
+                account.save()
+                logging_service.create_log(request.user, "添加邮箱账户", account)
+                messages.success(request, f"成功添加邮箱账户 '{account.email_address}'。")
+                return redirect('jobs:email_account_management')
+    else:
+        form = EmailAccountForm()
+    return render(request, 'jobs/email_account_form.html', {'form': form, 'action': '添加'})
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def email_account_edit_view(request, account_id):
+    account = get_object_or_404(EmailAccount, pk=account_id, user=request.user)
+    if request.method == 'POST':
+        form = EmailAccountForm(request.POST, instance=account)
+        if form.is_valid():
+            account = form.save(commit=False)
+            # 只有在用户输入了新密码时才更新
+            if form.cleaned_data['smtp_password']:
+                account.smtp_password_encrypted = encrypt_key(form.cleaned_data['smtp_password'])
+
+            if account.is_default:
+                EmailAccount.objects.filter(user=request.user).exclude(pk=account.id).update(is_default=False)
+
+            account.save()
+            logging_service.create_log(request.user, "更新邮箱账户", account)
+            messages.success(request, f"成功更新邮箱账户 '{account.email_address}'。")
+            return redirect('jobs:email_account_management')
+    else:
+        form = EmailAccountForm(instance=account)
+    return render(request, 'jobs/email_account_form.html', {'form': form, 'action': '编辑', 'account': account})
 
 
 @login_required
