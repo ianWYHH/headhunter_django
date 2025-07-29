@@ -151,6 +151,11 @@ class EmailLog(models.Model):
     trigger_type = models.CharField(max_length=50, choices=TriggerType.choices, default=TriggerType.MANUAL,
                                     verbose_name="触发方式")
     remarks = models.TextField(blank=True, null=True, verbose_name="备注")
+    # **新增字段**
+    message_id = models.CharField(max_length=255, blank=True, null=True, db_index=True, verbose_name="服务商消息ID")
+    is_opened = models.BooleanField(default=False, verbose_name="是否打开")
+    opened_at = models.DateTimeField(blank=True, null=True, verbose_name="首次打开时间")
+    is_clicked = models.BooleanField(default=False, verbose_name="是否点击")
 
     def __str__(self): return f"Email to {self.candidate.name if self.candidate else 'N/A'} - {self.subject}"
 

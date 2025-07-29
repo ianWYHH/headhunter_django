@@ -84,7 +84,6 @@ class ApiKeyForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # 从settings中获取所有AI模型提供商，并去重
         provider_choices = sorted(
             list(set((p_info['provider'], p_info['provider'].upper()) for p_key, p_info in settings.AI_MODELS.items())))
         self.fields['provider'].choices = provider_choices
@@ -135,27 +134,18 @@ class EmailComposeForm(forms.Form):
     subject = forms.CharField(label="邮件主题", max_length=255)
     content = forms.CharField(label="邮件内容",
                               widget=forms.Textarea(attrs={'rows': 10, 'id': 'email-content-textarea'}))
-    template = forms.ModelChoiceField(queryset=EmailTemplate.objects.all(), required=False, label="选择模板",
-                                      empty_label="-- 手动撰写 --")
+    template = forms.ModelChoiceField(
+        queryset=EmailTemplate.objects.all(),
+        required=False,
+        label="选择模板",
+        empty_label="-- 手动撰写 --",
+        # **核心修复**: 移除动态属性，改为在模板中直接设置
+    )
 
     def __init__(self, user, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['from_account'].queryset = EmailAccount.objects.filter(user=user)
         self.fields['from_account'].empty_label = None
-        # HTMX attributes for template loading
-        self.fields['template'].widget.attrs.update({
-            'hx-get': '/load-template/',
-            'hx-target': '#email-compose-fields',
-            'hx-swap': 'innerHTML',
-        })
-
-    def clean(self):
-        # Update hx-get URL with the selected template's ID
-        cleaned_data = super().clean()
-        template = cleaned_data.get('template')
-        if template:
-            self.fields['template'].widget.attrs['hx-get'] = f"/load-template/{template.id}/"
-        return cleaned_data
 
 
 class EmailRemarkForm(forms.ModelForm):

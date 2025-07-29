@@ -28,7 +28,6 @@ def generate_email_draft(keywords: str, job: dict, user_name: str, provider_key:
     6. 以邀请对方进一步沟通为结尾，引导其回复。
     7. 返回一个且仅一个符合RFC 8259标准的JSON对象，该对象必须包含 "subject" 和 "body" 两个键。不要返回任何JSON以外的解释性文字。
     """
-    # 复用已有的、经过用户隔离和错误处理的AI调用函数
     return parsing_service._call_ai_model(prompt, provider_key, user)
 
 def optimize_email_content(draft_content: str, provider_key: str, user):
@@ -51,5 +50,24 @@ def optimize_email_content(draft_content: str, provider_key: str, user):
     ---
     {draft_content}
     ---
+    """
+    return parsing_service._call_ai_model(prompt, provider_key, user)
+
+def generate_template_draft(keywords: str, provider_key: str, user):
+    """
+    **新增函数**: 根据关键词，调用AI生成邮件模板。
+    """
+    prompt = f"""
+    你是一位专业的猎头招聘文案专家，请根据以下核心诉求，为我撰写一个专业的、通用的邮件模板。
+
+    # 核心诉求 (模板需要围绕这个主题)
+    - {keywords}
+
+    # 撰写要求
+    1. 模板需包含 "name" (模板名称), "subject" (主题) 和 "body" (正文) 三个部分。
+    2. "name" 应该根据核心诉求生成一个简洁、明确的模板名称。
+    3. 正文内容必须包含 `{{candidate.salutation}}`, `{{job.title}}`, `{{job.company_name}}`, `{{user.name}}`, `{{user.signature}}` 等通用占位符，以确保模板的通用性。
+    4. 模板内容应结构清晰、语言专业，便于用户直接使用或稍作修改。
+    5. 返回一个且仅一个符合RFC 8259标准的JSON对象，该对象必须包含 "name", "subject", "body" 三个键。
     """
     return parsing_service._call_ai_model(prompt, provider_key, user)

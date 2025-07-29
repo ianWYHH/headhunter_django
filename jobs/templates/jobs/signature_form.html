@@ -11,19 +11,73 @@
 
 <div class="card">
     <div class="card-body">
-        <form method="post">
+        <form method="post" id="signature-form">
             {% csrf_token %}
             <div class="mb-3">
                 <label class="form-label">{{ form.content.label }}</label>
-                {% render_field form.content class="form-control" %}
+                <!-- **核心改动**: 替换为CKEditor的目标元素 -->
+                <div id="ckeditor-container">
+                    {% render_field form.content id="ckeditor-editor" %}
+                </div>
+                <div class="form-text">
+                    您可以在这里使用HTML标签来格式化您的签名，例如 `&lt;b&gt;加粗&lt;/b&gt;`。
+                </div>
             </div>
+
             {% if form.errors %}
                 <div class="alert alert-danger">
                     {% for field, errors in form.errors.items %}{{ errors|striptags }}{% endfor %}
                 </div>
             {% endif %}
-            <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> 保存签名</button>
+            <button type="button" id="save-button" class="btn btn-primary"><i class="bi bi-save"></i> 保存签名</button>
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<!-- **核心改动**: 引入CKEditor 5及中文语言包 -->
+<script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/classic/ckeditor.js"></script>
+<script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/classic/translations/zh-cn.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        let editorInstance; // 用于持有CKEditor实例
+
+        ClassicEditor
+            .create(document.querySelector('#ckeditor-editor'), {
+                language: 'zh-cn', // 设置语言为中文
+                toolbar: {
+                    items: [
+                        'heading', '|',
+                        'bold', 'italic', 'underline', 'strikethrough', '|',
+                        'bulletedList', 'numberedList', '|',
+                        'undo', 'redo'
+                    ],
+                },
+                height: 300
+            })
+            .then(editor => {
+                editorInstance = editor; // 将创建的实例保存到变量中
+            })
+            .catch(error => {
+                console.error('CKEditor 5 initialization error:', error);
+            });
+
+        // **核心修复**: 为保存按钮添加明确的点击事件
+        const saveBtn = document.getElementById('save-button');
+        if (saveBtn) {
+            saveBtn.addEventListener('click', function() {
+                if (editorInstance) {
+                    // 1. 更新原始textarea的值
+                    editorInstance.updateSourceElement();
+                }
+                // 2. 手动提交表单
+                const form = document.getElementById('signature-form');
+                if (form) {
+                    form.submit();
+                }
+            });
+        }
+    });
+</script>
 {% endblock %}

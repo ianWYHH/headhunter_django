@@ -11,12 +11,45 @@
 
 <div class="card">
     <div class="card-body">
-        <form method="post">
+        <form method="post" id="template-form">
             {% csrf_token %}
+
+            <details class="mb-3">
+                <summary class="fw-bold" style="cursor: pointer;">
+                    <i class="bi bi-robot"></i> AI 辅助生成模板
+                </summary>
+                <div class="card card-body mt-2 bg-light">
+                    <div class="mb-3">
+                        <label for="ai-keywords" class="form-label">模板主题/核心诉求</label>
+                        <input type="text" id="ai-keywords" class="form-control" placeholder="例如：撰写一封初次联系候选人的模板, 语气专业">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                           <label for="ai-model-provider" class="form-label">选择AI模型</label>
+                            <select id="ai-model-provider" class="form-select">
+                                {% for key, model in enabled_models.items %}
+                                    <option value="{{ key }}">{{ model.name }}</option>
+                                {% empty %}
+                                    <option value="">无可用模型 (请先配置API密钥)</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end">
+                        <button type="button" id="ai-generate-template-btn" class="btn btn-info">
+                            <span class="spinner-border spinner-border-sm htmx-indicator" role="status" aria-hidden="true"></span>
+                            生成模板内容
+                        </button>
+                    </div>
+                </div>
+            </details>
+
+            <hr>
+
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <label class="form-label">{{ form.name.label }}</label>
-                    {% render_field form.name class="form-control" %}
+                    {% render_field form.name class="form-control" id="template-name" %}
                 </div>
                 <div class="col-md-6 mb-3">
                     <label class="form-label">{{ form.tags.label }}</label>
@@ -25,13 +58,16 @@
             </div>
             <div class="mb-3">
                 <label class="form-label">{{ form.subject.label }}</label>
-                {% render_field form.subject class="form-control" %}
+                {% render_field form.subject class="form-control" id="template-subject" %}
             </div>
             <div class="mb-3">
                 <label class="form-label">{{ form.body.label }}</label>
-                {% render_field form.body class="form-control" %}
+                <!-- **核心改动**: 替换为CKEditor的目标元素 -->
+                <div id="ckeditor-container">
+                    {% render_field form.body id="ckeditor-editor" %}
+                </div>
                 <div class="form-text">
-                    可用占位符: <code>{{candidate.name}}</code>, <code>{{job.title}}</code>, <code>{{job.company.name}}</code>, <code>{{user.username}}</code>, <code>{{user.signature}}</code> 等。
+                    可用占位符: <code>{{candidate.name}}</code>, <code>{{candidate.salutation}}</code>, <code>{{job.title}}</code>, <code>{{job.company_name}}</code>, <code>{{user.name}}</code>, <code>{{user.signature}}</code>
                 </div>
             </div>
             {% if form.errors %}
@@ -39,8 +75,113 @@
                     {% for field, errors in form.errors.items %}{{ errors|striptags }}{% endfor %}
                 </div>
             {% endif %}
-            <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> 保存模板</button>
+            <button type="button" id="save-button" class="btn btn-primary"><i class="bi bi-save"></i> 保存模板</button>
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<!-- **核心改动**: 引入CKEditor 5及中文语言包 -->
+<script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/classic/ckeditor.js"></script>
+<script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/classic/translations/zh-cn.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        let editorInstance; // 用于持有CKEditor实例
+
+        ClassicEditor
+            .create(document.querySelector('#ckeditor-editor'), {
+                language: 'zh-cn', // 设置语言为中文
+                toolbar: {
+                    items: [
+                        'heading', '|',
+                        'bold', 'italic', 'underline', 'strikethrough', '|',
+                        'bulletedList', 'numberedList', '|',
+                        'outdent', 'indent', '|',
+                        'undo', 'redo',
+                        '-',
+                        'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor', '|',
+                        'link', 'insertTable', 'blockQuote', '|',
+                        'alignment', '|',
+                        'sourceEditing'
+                    ],
+                    shouldNotGroupWhenFull: true
+                }
+            })
+            .then(editor => {
+                editorInstance = editor; // 将创建的实例保存到变量中
+            })
+            .catch(error => {
+                console.error('CKEditor 5 initialization error:', error);
+            });
+
+        // **核心修复**: 为保存按钮添加明确的点击事件
+        const saveBtn = document.getElementById('save-button');
+        if (saveBtn) {
+            saveBtn.addEventListener('click', function() {
+                if (editorInstance) {
+                    // 1. 更新原始textarea的值
+                    editorInstance.updateSourceElement();
+                }
+                // 2. 手动提交表单
+                const form = document.getElementById('template-form');
+                if (form) {
+                    form.submit();
+                }
+            });
+        }
+
+        const generateBtn = document.getElementById('ai-generate-template-btn');
+        if(generateBtn) {
+            generateBtn.addEventListener('click', function() {
+                const keywords = document.getElementById('ai-keywords').value;
+                const provider = document.getElementById('ai-model-provider').value;
+                const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+                const subjectField = document.getElementById('template-subject');
+                const nameField = document.getElementById('template-name');
+
+                if (!keywords) {
+                    alert('请填写模板主题或核心诉求。');
+                    return;
+                }
+
+                this.classList.add('htmx-request');
+                this.disabled = true;
+
+                fetch("{% url 'jobs:ai_generate_template' %}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({
+                        keywords: keywords,
+                        provider: provider
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert('AI 生成失败: ' + data.error);
+                    } else {
+                        subjectField.value = data.subject || '';
+                        if(data.name) { nameField.value = data.name; }
+                        if (editorInstance) {
+                            // 使用CKEditor的API来设置内容
+                            editorInstance.setData(data.body || '');
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('AI模板生成请求失败:', error);
+                    alert('请求AI服务时发生错误，请查看控制台。');
+                })
+                .finally(() => {
+                    this.classList.remove('htmx-request');
+                    this.disabled = false;
+                });
+            });
+        }
+    });
+</script>
 {% endblock %}

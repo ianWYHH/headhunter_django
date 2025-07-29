@@ -11,7 +11,7 @@
         body { background-color: #f8f9fa; }
         .table-hover tbody tr:not(.no-hover) { cursor: pointer; }
         .htmx-indicator { display: none; }
-        .htmx-request .htmx-indicator { display: inline-block; }
+        .htmx-request .htmx-indicator, .htmx-request.htmx-indicator { display: inline-block; }
         .nav-link.active { font-weight: bold; }
     </style>
 </head>
@@ -36,6 +36,7 @@
                         <i class="bi bi-person-circle"></i> {{ user.username }}
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="{% url 'jobs:email_settings' %}"><i class="bi bi-gear-fill"></i> 邮件设置</a></li>
                         <li><a class="dropdown-item" href="{% url 'jobs:email_account_management' %}"><i class="bi bi-envelope-at-fill"></i> 邮箱账户管理</a></li>
                         <li><a class="dropdown-item" href="{% url 'jobs:api_key_management' %}"><i class="bi bi-key-fill"></i> API密钥管理</a></li>
                         <li><hr class="dropdown-divider"></li>
@@ -70,17 +71,144 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script>
-      document.body.addEventListener('htmx:configRequest', (event) => {
-        if (event.detail.verb === 'post') {
-            const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
-            if (csrfTokenMeta) { event.detail.headers['X-CSRFToken'] = csrfTokenMeta.content; }
-        }
-      });
-      document.body.addEventListener('htmx:afterSwap', function(evt) {
-        if (evt.detail.target.id === "offcanvas-content" && evt.detail.xhr.status < 400) {
-          const offcanvas = new bootstrap.Offcanvas(document.getElementById('detailOffcanvas'));
-          offcanvas.show();
-        }
+      // **核心修复**: 全局JavaScript逻辑
+      document.addEventListener('DOMContentLoaded', function() {
+        // --- 1. Offcanvas Management ---
+        const detailOffcanvasElement = document.getElementById('detailOffcanvas');
+        // Initialize the offcanvas instance once
+        const detailOffcanvas = new bootstrap.Offcanvas(detailOffcanvasElement);
+
+        // Listen for HTMX swaps to show the offcanvas
+        document.body.addEventListener('htmx:afterSwap', function(evt) {
+            if (evt.detail.target.id === "offcanvas-content") {
+                if (evt.detail.xhr.status < 400) {
+                    detailOffcanvas.show();
+                } else {
+                    detailOffcanvas.hide();
+                }
+            }
+        });
+
+        // Listen for when the offcanvas is hidden to manually remove the backdrop
+        detailOffcanvasElement.addEventListener('hidden.bs.offcanvas', function () {
+            const backdrop = document.querySelector('.offcanvas-backdrop');
+            if (backdrop) {
+                backdrop.remove();
+            }
+        });
+
+        // --- 2. CSRF Token for HTMX POST requests ---
+        document.body.addEventListener('htmx:configRequest', (event) => {
+            if (event.detail.verb === 'post') {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+                event.detail.headers['X-CSRFToken'] = csrfToken;
+            }
+        });
+
+        // --- 3. Event Delegation for AI Buttons ---
+        document.body.addEventListener('click', function(event) {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
+            // --- Handle AI Generate Button ---
+            if (event.target && event.target.id === 'ai-generate-btn') {
+                const generateBtn = event.target;
+                const subjectField = document.getElementById('email-subject');
+                const contentField = document.getElementById('email-content');
+
+                const keywords = document.getElementById('ai-keywords').value;
+                const jobId = document.getElementById('ai-job-context').value;
+                const provider = document.getElementById('ai-model-provider').value;
+
+                if (!keywords || !jobId) {
+                    alert('请填写核心关键词并选择一个关联职位。');
+                    return;
+                }
+
+                generateBtn.classList.add('htmx-request');
+                generateBtn.disabled = true;
+
+                fetch("{% url 'jobs:ai_generate_email' %}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({
+                        keywords: keywords,
+                        job_id: jobId,
+                        provider: provider
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert('AI 生成失败: ' + data.error);
+                    } else {
+                        subjectField.value = data.subject || '';
+                        contentField.value = data.body || '';
+                    }
+                })
+                .catch(error => {
+                    console.error('AI生成请求失败:', error);
+                    alert('请求AI服务时发生错误，请查看控制台。');
+                })
+                .finally(() => {
+                    generateBtn.classList.remove('htmx-request');
+                    generateBtn.disabled = false;
+                });
+            }
+
+            // --- Handle AI Optimize Button ---
+            if (event.target && event.target.id === 'ai-optimize-btn') {
+                const optimizeBtn = event.target;
+                const contentField = document.getElementById('email-content');
+                const providerSelect = document.getElementById('ai-model-provider');
+
+                if (!providerSelect){
+                    alert('无法找到AI模型选择器。');
+                    return;
+                }
+
+                const provider = providerSelect.value;
+                const content = contentField.value;
+
+                if (!content) {
+                    alert('内容为空，无需润色。');
+                    return;
+                }
+
+                optimizeBtn.classList.add('htmx-request');
+                optimizeBtn.disabled = true;
+
+                fetch("{% url 'jobs:ai_optimize_email' %}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({
+                        content: content,
+                        provider: provider
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert('AI 润色失败: ' + data.error);
+                    } else {
+                        contentField.value = data.optimized_text || content;
+                    }
+                })
+                .catch(error => {
+                    console.error('AI润色请求失败:', error);
+                    alert('请求AI服务时发生错误，请查看控制台。');
+                })
+                .finally(() => {
+                    optimizeBtn.classList.remove('htmx-request');
+                    optimizeBtn.disabled = false;
+                });
+            }
+        });
       });
     </script>
     {% block scripts %}{% endblock %}

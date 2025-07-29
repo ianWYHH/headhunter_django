@@ -31,7 +31,13 @@ urlpatterns = [
     path('candidate/<int:candidate_id>/email-history/', views.email_history_view, name='email_history'),
     path('email-log/<int:log_id>/', views.email_log_detail_view, name='email_log_detail'),
     path('email-log/<int:log_id>/save-remark/', views.save_email_remark_view, name='save_email_remark'),
-    path('load-template/<int:template_id>/', views.load_template_view, name='load_template'),
+    # **核心修复**: 确保URL不包含路径参数
+    path('load-template/', views.load_template_view, name='load_template'),
+
+    # AI 辅助功能
+    path('ai/generate-email/', views.ai_generate_email_view, name='ai_generate_email'),
+    path('ai/optimize-email/', views.ai_optimize_email_view, name='ai_optimize_email'),
+    path('ai/generate-template/', views.ai_generate_template_view, name='ai_generate_template'), # **新增URL**
 
     # 任务与日志
     path('tasks/', views.task_queue_view, name='task_queue'),
@@ -60,5 +66,6 @@ urlpatterns = [
     path('parse-candidates/', views.parse_and_show_candidates_view, name='parse_candidates'),
     path('save-parsed-jobs/', views.save_parsed_jobs_view, name='save_jobs'),
     path('save-parsed-candidates/', views.save_parsed_candidates_view, name='save_candidates'),
-    path('ai/generate-email/', views.ai_generate_email_view, name='ai_generate_email'),
+
+    path('load-template/', views.load_template_view, name='load_template'),
 ]
