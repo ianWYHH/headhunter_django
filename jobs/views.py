@@ -592,10 +592,6 @@ def delete_template_view(request, template_id):
     return redirect('jobs:email_settings')
 
 
-@login_required
-@require_http_methods(["GET", "POST"])
-
-
 # --- API密钥管理与AI解析流程视图 ---
 @login_required
 @require_http_methods(["GET", "POST"])
@@ -666,8 +662,9 @@ def _parse_and_show(request, content_type, parse_function, template_name):
     provider_key = request.POST.get('model_provider')
     if not provider_key: messages.error(request, "解析错误：您没有选择要使用的AI模型。"); return HttpResponse(status=204)
     full_text = request.POST.get('text_content', '')
-    if not full_text: messages.warning(request, "未提供任何文本内容进行解析。"); return render(template_name,
-                                                                                              {'parsed_items': []})
+    if not full_text: 
+        messages.warning(request, "未提供任何文本内容进行解析。")
+        return render(request, template_name, {'parsed_items': []})
     all_results = parse_function(full_text, provider_key, user=request.user)
     if isinstance(all_results, dict) and "error" in all_results:
         failed_results = [all_results];
@@ -792,12 +789,13 @@ def save_parsed_candidates_view(request):
     try:
         saved_count = 0;
         form_indexes = sorted(list(set([k.split('-')[1] for k in request.POST if k.startswith('form-')])))
+        def sanitize_url(url_string):
+            if url_string and not url_string.startswith(('http://', 'https://')): 
+                return 'https://' + url_string
+            return url_string
+
         with transaction.atomic():
             for i in form_indexes:
-                def sanitize_url(url_string):
-                    if url_string and not url_string.startswith(('http://', 'https://')): return 'https://' + url_string
-                    return url_string
-
                 homepage = sanitize_url(request.POST.get(f'form-{i}-homepage', ''));
                 github_profile = sanitize_url(request.POST.get(f'form-{i}-github_profile', ''))
                 linkedin_profile = sanitize_url(request.POST.get(f'form-{i}-linkedin_profile', ''));
