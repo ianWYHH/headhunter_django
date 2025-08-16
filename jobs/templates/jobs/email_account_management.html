@@ -8,16 +8,18 @@
     <h1 class="h2">邮箱账户管理</h1>
 </div>
 
-<div class="card">
+<!-- 现有邮箱账户列表 (移到顶部) -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-envelope-gear"></i> 现有邮箱账户 <small class="text-muted">点击账户进行编辑</small></h5>
+    </div>
     <div class="card-body">
-        <div class="d-flex justify-content-end mb-3">
-            <a href="{% url 'jobs:email_account_add' %}" class="btn btn-primary"><i class="bi bi-plus-circle"></i> 添加新账户</a>
-        </div>
         <div class="table-responsive">
-            <table class="table table-striped">
+            <table class="table table-hover">
                 <thead>
                     <tr>
                         <th>邮箱地址</th>
+                        <th>状态</th>
                         <th>默认发件箱</th>
                         <th>每日上限</th>
                         <th>最后更新</th>
@@ -26,21 +28,77 @@
                 </thead>
                 <tbody>
                     {% for account in accounts %}
-                    <tr>
-                        <td>{{ account.email_address }}</td>
+                    <tr class="account-row cursor-pointer" 
+                        data-account-id="{{ account.id }}"
+                        data-email="{{ account.email_address }}"
+                        data-sender-name="{{ account.sender_name|default:'' }}"
+                        data-daily-limit="{{ account.daily_send_limit }}"
+                        data-is-default="{{ account.is_default|yesno:'true,false' }}"
+                        data-signature="{{ account.signature|default:'' }}"
+                        data-smtp-host="{{ account.smtp_host }}"
+                        data-smtp-port="{{ account.smtp_port }}"
+                        data-use-ssl="{{ account.use_ssl|yesno:'true,false' }}"
+                        data-imap-host="{{ account.imap_host|default:'' }}"
+                        data-imap-port="{{ account.imap_port|default:'' }}"
+                        data-imap-use-ssl="{{ account.imap_use_ssl|yesno:'true,false' }}"
+                        onclick="selectEmailAccount(this)"
+                        title="点击编辑此邮箱账户">
+                        <td>
+                            <strong>{{ account.email_address }}</strong>
+                            {% if account.sender_name %}
+                                <br><small class="text-muted">{{ account.sender_name }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <!-- Status badge placeholder - will be updated via HTMX -->
+                            <div id="status-container-{{ account.id }}">
+                                <span class="badge bg-secondary me-2" id="status-badge-{{ account.id }}">
+                                    ❓ 未检查
+                                </span>
+                            </div>
+                        </td>
                         <td>{% if account.is_default %}<span class="badge bg-success">是</span>{% endif %}</td>
                         <td>{{ account.daily_send_limit }}</td>
                         <td>{{ account.updated_at|date:"Y-m-d H:i" }}</td>
                         <td>
-                            <a href="{% url 'jobs:email_account_edit' account.id %}" class="btn btn-sm btn-outline-secondary">编辑</a>
-                            <form action="{% url 'jobs:email_account_delete' account.id %}" method="post" class="d-inline" onsubmit="return confirm('确定删除邮箱账户 `{{ account.email_address }}` 吗？');">
-                                {% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-danger">删除</button>
-                            </form>
+                            <div class="d-flex flex-wrap gap-1">
+                                <button type="button" 
+                                        class="btn btn-sm btn-secondary"
+                                        hx-get="{% url 'jobs:check_email_account_status' account.id %}"
+                                        hx-target="#status-container-{{ account.id }}"
+                                        hx-swap="innerHTML"
+                                        onclick="event.stopPropagation(); checkEmailAccountStatus(this, '{{ account.id }}')"
+                                        data-bs-toggle="tooltip"
+                                        data-bs-placement="top"
+                                        title="检查SMTP连接状态">
+                                    <i class="bi bi-wifi"></i> 状态
+                                </button>
+                                <button type="button" 
+                                        class="btn btn-sm btn-info" 
+                                        onclick="event.stopPropagation(); showTestModal('{{ account.id }}', '{{ account.email_address }}')"
+                                        data-bs-toggle="tooltip"
+                                        data-bs-placement="top"
+                                        title="发送测试邮件">
+                                    <i class="bi bi-envelope-check"></i> 测试
+                                </button>
+                                <form action="{% url 'jobs:email_account_delete' account.id %}" method="post" class="d-inline" onsubmit="event.stopPropagation(); return confirm('确定删除邮箱账户 `{{ account.email_address }}` 吗？');">
+                                    {% csrf_token %}
+                                    <button type="submit" 
+                                            class="btn btn-sm btn-outline-danger"
+                                            data-bs-toggle="tooltip"
+                                            data-bs-placement="top"
+                                            title="删除邮箱账户">
+                                        <i class="bi bi-trash"></i> 删除
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="5" class="text-center text-muted p-4">您尚未配置任何邮箱账户。</td>
+                        <td colspan="6" class="text-center text-muted p-4">
+                            您尚未配置任何邮箱账户。请使用下方表单添加新账户。
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -48,4 +106,530 @@
         </div>
     </div>
 </div>
+
+<!-- 邮箱账户表单 (添加/编辑) -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0" id="form-title">
+            <i class="bi bi-plus-circle" id="form-icon"></i> 
+            <span id="form-mode-text">添加新邮箱账户</span>
+        </h5>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="clear-form-btn" onclick="clearForm()" style="display: none;">
+            <i class="bi bi-x-circle"></i> 清空表单
+        </button>
+    </div>
+    <div class="card-body">
+        <!-- Current editing account info -->
+        <div id="editing-info" class="alert alert-info border-0 mb-3" style="display: none;">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-pencil-square me-2"></i>
+                <div>
+                    <strong>正在编辑:</strong> <span id="editing-email"></span>
+                    <br><small class="text-muted">修改下方表单字段并点击"保存更改"按钮</small>
+                </div>
+            </div>
+        </div>
+
+        <form method="post" id="email-account-form">
+            {% csrf_token %}
+            <input type="hidden" id="account-id" name="account_id" value="">
+            
+            <!-- Basic Information Section -->
+            <div class="mb-4">
+                <h6 class="text-muted border-bottom pb-2 mb-3"><i class="bi bi-person-fill"></i> 基本信息</h6>
+                
+                <div class="row">
+                    <div class="col-md-8 mb-3">
+                        <label class="form-label">{{ form.email_address.label }}</label>
+                        {% render_field form.email_address class="form-control" id="id_email_address" %}
+                        <div class="invalid-feedback"></div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">{{ form.daily_send_limit.label }}</label>
+                        {% render_field form.daily_send_limit class="form-control" id="id_daily_send_limit" %}
+                        <div class="invalid-feedback"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">{{ form.sender_name.label }}</label>
+                    {% render_field form.sender_name class="form-control" id="id_sender_name" %}
+                    <div class="form-text">{{ form.sender_name.help_text }}</div>
+                    <div class="invalid-feedback"></div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="form-check">
+                        {% render_field form.is_default class="form-check-input" id="id_is_default" %}
+                        <label class="form-check-label" for="id_is_default">{{ form.is_default.label }}</label>
+                    </div>
+                    <div class="form-text">设为默认后，其他邮箱账户的默认状态将被取消。</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">{{ form.signature.label }}</label>
+                    {% render_field form.signature class="form-control" rows="3" id="id_signature" %}
+                    <div class="form-text">邮件签名将自动附加到发送的邮件末尾。支持HTML格式。</div>
+                    <div class="invalid-feedback"></div>
+                </div>
+            </div>
+            
+            <!-- SMTP Configuration Section -->
+            <div class="mb-4">
+                <h6 class="text-muted border-bottom pb-2 mb-3"><i class="bi bi-send-fill"></i> SMTP 发件配置</h6>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.smtp_host.label }}</label>
+                        {% render_field form.smtp_host class="form-control" id="id_smtp_host" %}
+                        <div class="invalid-feedback"></div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.smtp_port.label }}</label>
+                        {% render_field form.smtp_port class="form-control" id="id_smtp_port" %}
+                        <div class="invalid-feedback"></div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-8 mb-3">
+                        <label class="form-label">{{ form.smtp_password.label }}</label>
+                        {% render_field form.smtp_password class="form-control" id="id_smtp_password" %}
+                        <div class="form-text" id="password-help">
+                            <i class="bi bi-shield-lock text-warning"></i> 
+                            <span id="password-help-text">请输入邮箱密码或授权码。</span>
+                        </div>
+                        <div class="invalid-feedback"></div>
+                    </div>
+                    <div class="col-md-4 mb-3 d-flex align-items-center">
+                        <div class="form-check">
+                            {% render_field form.use_ssl class="form-check-input" id="id_use_ssl" %}
+                            <label class="form-check-label" for="id_use_ssl">{{ form.use_ssl.label }}</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- IMAP Configuration Section -->
+            <div class="mb-4">
+                <h6 class="text-muted border-bottom pb-2 mb-3"><i class="bi bi-envelope-fill"></i> IMAP 收件配置 <small class="text-muted">(可选)</small></h6>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.imap_host.label }}</label>
+                        {% render_field form.imap_host class="form-control" id="id_imap_host" %}
+                        <div class="invalid-feedback"></div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.imap_port.label }}</label>
+                        {% render_field form.imap_port class="form-control" id="id_imap_port" %}
+                        <div class="invalid-feedback"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-3 form-check">
+                    {% render_field form.imap_use_ssl class="form-check-input" id="id_imap_use_ssl" %}
+                    <label class="form-check-label" for="id_imap_use_ssl">{{ form.imap_use_ssl.label }}</label>
+                </div>
+            </div>
+            
+            <!-- Form Errors -->
+            {% if form.errors %}
+                <div class="alert alert-danger" id="form-errors">
+                    <h6><i class="bi bi-exclamation-triangle"></i> 请修正以下错误：</h6>
+                    <ul class="mb-0">
+                        {% for field, errors in form.errors.items %}
+                           <li><strong>{{ field }}:</strong> {{ errors|striptags }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+            <!-- Form Actions -->
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="text-muted small">
+                    <i class="bi bi-info-circle"></i> 
+                    <span id="form-info-text">填写表单信息并提交以添加新邮箱账户</span>
+                </div>
+                <div class="gap-2 d-flex">
+                    <button type="submit" class="btn btn-primary" id="submit-btn">
+                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" id="submit-spinner" style="display: none;"></span>
+                        <i class="bi bi-plus-lg" id="submit-icon"></i> 
+                        <span id="submit-text">添加邮箱账户</span>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+
+<!-- 测试邮箱模态框 -->
+<div class="modal fade" id="testEmailModal" tabindex="-1" aria-labelledby="testEmailModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="testEmailModalLabel">测试邮箱配置</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="testAccountEmail" class="form-label">测试邮箱：</label>
+                    <input type="text" class="form-control" id="testAccountEmail" readonly>
+                </div>
+                <div class="mb-3">
+                    <label for="testRecipient" class="form-label">收件人邮箱：</label>
+                    <input type="email" class="form-control" id="testRecipient" placeholder="请输入测试收件人邮箱地址" required>
+                    <div class="form-text">将向该邮箱发送一封测试邮件</div>
+                </div>
+                <div id="testResult" class="alert" style="display: none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="sendTestBtn" onclick="sendTestEmail()">
+                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" id="testSpinner" style="display: none;"></span>
+                    发送测试邮件
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Enhance table row hover and selection */
+.account-row {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.account-row:hover {
+    background-color: var(--bs-light) !important;
+}
+
+.account-row.table-active {
+    background-color: var(--bs-primary-bg-subtle) !important;
+    border-color: var(--bs-primary-border-subtle);
+}
+
+.account-row.table-active:hover {
+    background-color: var(--bs-primary-bg-subtle) !important;
+}
+
+/* Form validation styling */
+.is-invalid {
+    border-color: var(--bs-form-invalid-border-color);
+}
+
+.invalid-feedback {
+    display: block;
+    color: var(--bs-form-invalid-color);
+    font-size: 0.875em;
+    margin-top: 0.25rem;
+}
+
+/* Loading state for form submission */
+.form-loading .form-control,
+.form-loading .form-select,
+.form-loading .form-check-input {
+    opacity: 0.6;
+    pointer-events: none;
+}
+</style>
+
+<script>
+let currentAccountId = null;
+
+// Select email account for editing (inline form)
+function selectEmailAccount(row) {
+    const accountData = {
+        id: row.dataset.accountId,
+        email: row.dataset.email,
+        senderName: row.dataset.senderName,
+        dailyLimit: row.dataset.dailyLimit,
+        isDefault: row.dataset.isDefault === 'true',
+        signature: row.dataset.signature,
+        smtpHost: row.dataset.smtpHost,
+        smtpPort: row.dataset.smtpPort,
+        useSsl: row.dataset.useSsl === 'true',
+        imapHost: row.dataset.imapHost,
+        imapPort: row.dataset.imapPort,
+        imapUseSsl: row.dataset.imapUseSsl === 'true'
+    };
+    
+    // Highlight selected row
+    document.querySelectorAll('.account-row').forEach(r => r.classList.remove('table-active'));
+    row.classList.add('table-active');
+    
+    // Switch to edit mode
+    switchToEditMode(accountData);
+    
+    // Scroll to form
+    document.getElementById('email-account-form').scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'start' 
+    });
+}
+
+// Switch form to edit mode
+function switchToEditMode(accountData) {
+    // Update form header
+    document.getElementById('form-icon').className = 'bi bi-pencil-square';
+    document.getElementById('form-mode-text').textContent = '编辑邮箱账户';
+    document.getElementById('clear-form-btn').style.display = 'inline-block';
+    
+    // Show editing info
+    const editingInfo = document.getElementById('editing-info');
+    document.getElementById('editing-email').textContent = accountData.email;
+    editingInfo.style.display = 'block';
+    
+    // Update submit button
+    document.getElementById('submit-icon').className = 'bi bi-check-lg';
+    document.getElementById('submit-text').textContent = '保存更改';
+    document.getElementById('form-info-text').textContent = '修改设置后将立即生效';
+    
+    // Update password help text
+    document.getElementById('password-help-text').textContent = '留空表示保持当前密码不变。仅在需要更新密码时填写。';
+    
+    // Populate form fields
+    document.getElementById('account-id').value = accountData.id;
+    document.getElementById('id_email_address').value = accountData.email;
+    document.getElementById('id_sender_name').value = accountData.senderName;
+    document.getElementById('id_daily_send_limit').value = accountData.dailyLimit;
+    document.getElementById('id_is_default').checked = accountData.isDefault;
+    document.getElementById('id_signature').value = accountData.signature;
+    document.getElementById('id_smtp_host').value = accountData.smtpHost;
+    document.getElementById('id_smtp_port').value = accountData.smtpPort;
+    document.getElementById('id_use_ssl').checked = accountData.useSsl;
+    document.getElementById('id_imap_host').value = accountData.imapHost;
+    document.getElementById('id_imap_port').value = accountData.imapPort;
+    document.getElementById('id_imap_use_ssl').checked = accountData.imapUseSsl;
+    
+    // Clear password field for security
+    document.getElementById('id_smtp_password').value = '';
+    
+    // Clear any validation errors
+    clearValidationErrors();
+}
+
+// Clear form and switch back to add mode
+function clearForm() {
+    // Reset form header
+    document.getElementById('form-icon').className = 'bi bi-plus-circle';
+    document.getElementById('form-mode-text').textContent = '添加新邮箱账户';
+    document.getElementById('clear-form-btn').style.display = 'none';
+    
+    // Hide editing info
+    document.getElementById('editing-info').style.display = 'none';
+    
+    // Update submit button
+    document.getElementById('submit-icon').className = 'bi bi-plus-lg';
+    document.getElementById('submit-text').textContent = '添加邮箱账户';
+    document.getElementById('form-info-text').textContent = '填写表单信息并提交以添加新邮箱账户';
+    
+    // Reset password help text
+    document.getElementById('password-help-text').textContent = '请输入邮箱密码或授权码。';
+    
+    // Clear all form fields
+    document.getElementById('email-account-form').reset();
+    document.getElementById('account-id').value = '';
+    
+    // Remove row highlighting
+    document.querySelectorAll('.account-row').forEach(r => r.classList.remove('table-active'));
+    
+    // Clear validation errors
+    clearValidationErrors();
+}
+
+// Clear validation errors
+function clearValidationErrors() {
+    document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+    document.querySelectorAll('.invalid-feedback').forEach(el => el.textContent = '');
+}
+
+function checkEmailAccountStatus(button, accountId) {
+    // Show loading state
+    const originalHtml = button.innerHTML;
+    button.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>检查中...';
+    button.disabled = true;
+    
+    // Update status badge to show loading
+    const statusBadge = document.getElementById(`status-badge-${accountId}`);
+    if (statusBadge) {
+        statusBadge.className = 'badge bg-info me-2';
+        statusBadge.innerHTML = '⏳ 检查中...';
+    }
+    
+    // HTMX will handle the actual request, so we just need to handle the completion
+    // Listen for HTMX completion event
+    button.addEventListener('htmx:afterRequest', function(event) {
+        // Reset button state
+        button.innerHTML = originalHtml;
+        button.disabled = false;
+        
+            // Initialize tooltips for the new status badge
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function(tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    }, { once: true });
+    
+    // Handle errors
+    button.addEventListener('htmx:responseError', function(event) {
+        button.innerHTML = originalHtml;
+        button.disabled = false;
+        
+        // Show error in status badge
+        const statusContainer = document.getElementById(`status-container-${accountId}`);
+        if (statusContainer) {
+            statusContainer.innerHTML = '<span class="badge bg-danger me-2">❌ 检查失败</span>';
+        }
+    }, { once: true });
+}
+
+function showTestModal(accountId, emailAddress) {
+    currentAccountId = accountId;
+    document.getElementById('testAccountEmail').value = emailAddress;
+    document.getElementById('testRecipient').value = '';
+    document.getElementById('testResult').style.display = 'none';
+    
+    const modal = new bootstrap.Modal(document.getElementById('testEmailModal'));
+    modal.show();
+}
+
+function sendTestEmail() {
+    const testRecipient = document.getElementById('testRecipient').value.trim();
+    const sendBtn = document.getElementById('sendTestBtn');
+    const spinner = document.getElementById('testSpinner');
+    const resultDiv = document.getElementById('testResult');
+    
+    if (!testRecipient) {
+        showTestResult('请输入收件人邮箱地址', 'warning');
+        return;
+    }
+    
+    // 显示加载状态
+    sendBtn.disabled = true;
+    spinner.style.display = 'inline-block';
+    resultDiv.style.display = 'none';
+    
+    // 发送测试请求
+    fetch(`/email-accounts/${currentAccountId}/test/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({
+            test_recipient: testRecipient
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showTestResult(data.message, 'success');
+        } else {
+            showTestResult(data.message, 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('测试邮箱时发生错误:', error);
+        showTestResult('测试请求失败，请检查网络连接', 'danger');
+    })
+    .finally(() => {
+        // 隐藏加载状态
+        sendBtn.disabled = false;
+        spinner.style.display = 'none';
+    });
+}
+
+function showTestResult(message, type) {
+    const resultDiv = document.getElementById('testResult');
+    resultDiv.className = `alert alert-${type}`;
+    resultDiv.textContent = message;
+    resultDiv.style.display = 'block';
+}
+
+// 支持回车键发送测试
+document.getElementById('testRecipient').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        sendTestEmail();
+    }
+});
+
+// Form submission handling with validation feedback
+document.getElementById('email-account-form').addEventListener('submit', function(e) {
+    const submitBtn = document.getElementById('submit-btn');
+    const spinner = document.getElementById('submit-spinner');
+    
+    // Show loading state
+    submitBtn.disabled = true;
+    spinner.style.display = 'inline-block';
+    document.getElementById('email-account-form').classList.add('form-loading');
+    
+    // Clear previous validation errors
+    clearValidationErrors();
+});
+
+// Form validation helper
+function validateForm() {
+    let isValid = true;
+    const requiredFields = ['id_email_address', 'id_smtp_host', 'id_smtp_port'];
+    
+    // Check if editing mode and password is not required
+    const accountId = document.getElementById('account-id').value;
+    if (!accountId) {
+        // Adding new account - password is required
+        requiredFields.push('id_smtp_password');
+    }
+    
+    requiredFields.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (!field.value.trim()) {
+            field.classList.add('is-invalid');
+            const feedback = field.parentNode.querySelector('.invalid-feedback');
+            if (feedback) {
+                feedback.textContent = '此字段为必填项';
+            }
+            isValid = false;
+        }
+    });
+    
+    // Email validation
+    const emailField = document.getElementById('id_email_address');
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (emailField.value && !emailRegex.test(emailField.value)) {
+        emailField.classList.add('is-invalid');
+        const feedback = emailField.parentNode.querySelector('.invalid-feedback');
+        if (feedback) {
+            feedback.textContent = '请输入有效的邮箱地址';
+        }
+        isValid = false;
+    }
+    
+    // Port validation
+    const portFields = ['id_smtp_port', 'id_imap_port'];
+    portFields.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (field.value && (isNaN(field.value) || field.value < 1 || field.value > 65535)) {
+            field.classList.add('is-invalid');
+            const feedback = field.parentNode.querySelector('.invalid-feedback');
+            if (feedback) {
+                feedback.textContent = '端口号必须在1-65535之间';
+            }
+            isValid = false;
+        }
+    });
+    
+    return isValid;
+}
+
+// Initialize tooltips on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function(tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
 {% endblock %}

@@ -1,0 +1,415 @@
+{% extends 'jobs/base.html' %}
+{% load static %}
+
+{% block title %}{{ group.name }} - 联系人分组详情{% endblock %}
+
+{% block page_title %}联系人分组详情{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 头部信息和操作按钮 -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="d-flex align-items-center">
+                <div class="group-icon me-3">
+                    <i class="fas fa-layer-group fa-2x text-white"></i>
+                </div>
+                <div>
+                    <h2 class="mb-1">{{ group.name }}</h2>
+                    <div class="d-flex align-items-center gap-2">
+                        <small class="text-muted">
+                            <i class="fas fa-user"></i> {{ group.user.username }}
+                            <i class="fas fa-calendar ms-2"></i> {{ group.created_at|date:"Y-m-d H:i" }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="btn-group" role="group">
+                <a href="{% url 'jobs:contact_group_edit' group.id %}" class="btn btn-primary">
+                    <i class="fas fa-edit"></i> 编辑
+                </a>
+                <a href="{% url 'jobs:contact_group_list' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> 返回列表
+                </a>
+                <button type="button" class="btn btn-outline-danger" 
+                        onclick="confirmDelete()" title="删除分组">
+                    <i class="fas fa-trash"></i> 删除
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- 左侧：分组信息和联系人列表 -->
+        <div class="col-md-9">
+            <!-- 分组信息卡片 -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle"></i> 分组信息
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <label>分组名称</label>
+                                <div class="info-value">{{ group.name }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <label>创建者</label>
+                                <div class="info-value">{{ group.user.username|default:"系统" }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <label>创建时间</label>
+                                <div class="info-value">{{ group.created_at|date:"Y-m-d H:i" }}</div>
+                            </div>
+                        </div>
+                        {% if group.description %}
+                        <div class="col-12">
+                            <div class="info-item">
+                                <label>分组描述</label>
+                                <div class="info-value">{{ group.description|linebreaks }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- 联系人列表 -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-users"></i> 分组联系人 ({{ total_contacts }})
+                    </h5>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <a href="{% url 'jobs:contact_email_send' %}?contact_groups={{ group.id }}" 
+                           class="btn btn-primary">
+                            <i class="fas fa-envelope"></i> 群发邮件
+                        </a>
+                        <a href="{% url 'jobs:contact_group_edit' group.id %}" 
+                           class="btn btn-outline-info">
+                            <i class="fas fa-user-plus"></i> 添加联系人
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if page_obj %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>联系人</th>
+                                        <th>邮箱</th>
+                                        <th>电话</th>
+                                        <th>职位</th>
+                                        <th>公司</th>
+                                        <th>部门</th>
+                                        <th>状态</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for contact in page_obj %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="contact-avatar me-2">
+                                                    <i class="fas fa-user"></i>
+                                                </div>
+                                                <div>
+                                                    <strong>{{ contact.name }}</strong>
+                                                    {% if contact.gender != 'unknown' %}
+                                                        <small class="text-muted d-block">({{ contact.get_gender_display }})</small>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <a href="mailto:{{ contact.email }}">{{ contact.email }}</a>
+                                        </td>
+                                        <td>
+                                            {% if contact.phone %}
+                                                <a href="tel:{{ contact.phone }}">{{ contact.phone }}</a>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ contact.position|default:"-" }}</td>
+                                        <td>{{ contact.company|default:"-" }}</td>
+                                        <td>{{ contact.department|default:"-" }}</td>
+                                        <td>
+                                            {% if contact.is_active %}
+                                                <span class="badge bg-success">有效</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">无效</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <a href="{% url 'jobs:contact_detail' contact.id %}" 
+                                                   class="btn btn-outline-primary btn-sm" title="查看详情">
+                                                    <i class="fas fa-eye"></i> 详情
+                                                </a>
+                                                <a href="{% url 'jobs:contact_edit' contact.id %}" 
+                                                   class="btn btn-outline-info btn-sm" title="编辑">
+                                                    <i class="fas fa-edit"></i> 编辑
+                                                </a>
+                                                <a href="{% url 'jobs:contact_email_send' %}?contact={{ contact.id }}" 
+                                                   class="btn btn-outline-success btn-sm" title="发邮件">
+                                                    <i class="fas fa-envelope"></i> 邮件
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- 分页 -->
+                        {% include 'jobs/partials/pagination.html' %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">此分组暂无联系人</h5>
+                            <p class="text-muted">
+                                您可以 <a href="{% url 'jobs:contact_group_edit' group.id %}">编辑分组</a> 来添加联系人
+                            </p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧：统计和操作 -->
+        <div class="col-md-3">
+            <!-- 统计信息 -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-bar"></i> 统计信息
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="stat-item">
+                        <label>联系人总数</label>
+                        <div class="stat-value">
+                            <span class="h4 text-primary">{{ total_contacts }}</span>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <label>最后更新</label>
+                        <div class="stat-value">
+                            {{ group.updated_at|date:"Y-m-d H:i" }}
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <label>更新者</label>
+                        <div class="stat-value">
+                            {{ group.updated_by.username|default:"系统" }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 快速操作 -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bolt"></i> 快速操作
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'jobs:contact_email_send' %}?contact_groups={{ group.id }}" 
+                           class="btn btn-primary">
+                            <i class="fas fa-envelope"></i> 群发邮件
+                        </a>
+                        <a href="{% url 'jobs:contact_group_edit' group.id %}" 
+                           class="btn btn-outline-info">
+                            <i class="fas fa-user-plus"></i> 管理联系人
+                        </a>
+                        <a href="{% url 'jobs:scheduled_task_add' %}?contact_group={{ group.id }}" 
+                           class="btn btn-outline-warning">
+                            <i class="fas fa-clock"></i> 创建定时任务
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 操作日志 -->
+            {% if operation_logs %}
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-history"></i> 最近操作
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        {% for log in operation_logs %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker">
+                                {% if log.operation_type == 'create' %}
+                                    <i class="fas fa-plus text-success"></i>
+                                {% elif log.operation_type == 'update' %}
+                                    <i class="fas fa-edit text-primary"></i>
+                                {% elif log.operation_type == 'group_add' %}
+                                    <i class="fas fa-user-plus text-info"></i>
+                                {% elif log.operation_type == 'group_remove' %}
+                                    <i class="fas fa-user-minus text-warning"></i>
+                                {% else %}
+                                    <i class="fas fa-circle text-secondary"></i>
+                                {% endif %}
+                            </div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">{{ log.get_operation_type_display }}</h6>
+                                <p class="mb-1">{{ log.operation_description }}</p>
+                                <small class="text-muted">
+                                    {{ log.operator.username }} • {{ log.operation_time|date:"Y-m-d H:i" }}
+                                </small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- 删除确认模态框 -->
+<form id="deleteForm" method="post" action="{% url 'jobs:contact_group_delete' group.id %}" style="display: none;">
+    {% csrf_token %}
+</form>
+
+<style>
+.group-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, #17a2b8, #138496);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.contact-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, #6c757d, #495057);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.75rem;
+}
+
+.info-item {
+    margin-bottom: 1rem;
+}
+
+.info-item label {
+    font-weight: 600;
+    color: #6c757d;
+    font-size: 0.875rem;
+    margin-bottom: 0.25rem;
+    display: block;
+}
+
+.info-value {
+    color: #495057;
+}
+
+.stat-item {
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #eee;
+}
+
+.stat-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.stat-item label {
+    font-weight: 600;
+    color: #6c757d;
+    font-size: 0.875rem;
+    margin-bottom: 0.25rem;
+    display: block;
+}
+
+.timeline {
+    position: relative;
+    padding-left: 2rem;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -2rem;
+    top: 0.25rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    background: white;
+    border: 2px solid #dee2e6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.timeline-content h6 {
+    margin-bottom: 0.25rem;
+    font-size: 0.9rem;
+}
+
+.timeline-content p {
+    margin-bottom: 0.25rem;
+    font-size: 0.875rem;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.btn-group-sm > .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+.badge {
+    font-size: 0.7rem;
+}
+</style>
+
+<script>
+function confirmDelete() {
+    if (confirm('确定要删除分组 "{{ group.name }}" 吗？此操作不可恢复。')) {
+        document.getElementById('deleteForm').submit();
+    }
+}
+</script>
+{% endblock %}

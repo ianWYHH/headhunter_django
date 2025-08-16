@@ -1,0 +1,190 @@
+{% extends 'jobs/base.html' %}
+
+{% block title %}多邮箱管理{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="page-title"><i class="fas fa-inbox"></i> 多邮箱管理</h2>
+                <div class="page-actions">
+                    <a href="{% url 'jobs:multi_email_send' %}" class="btn btn-primary">
+                        <i class="fas fa-paper-plane"></i> 批量发送
+                    </a>
+                    <a href="{% url 'jobs:email_account_stats' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-chart-bar"></i> 发送统计
+                    </a>
+                    <a href="{% url 'jobs:incoming_emails' %}" class="btn btn-outline-info">
+                        <i class="fas fa-envelope"></i> 收件管理
+                    </a>
+                </div>
+            </div>
+
+            <!-- 邮箱账户状态概览 -->
+            <div class="row mb-4">
+                {% for status in accounts_status %}
+                <div class="col-lg-4 col-md-6 mb-3">
+                    <div class="card {% if status.is_quota_exceeded %}border-danger{% elif status.remaining_quota < 50 %}border-warning{% else %}border-success{% endif %}">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="card-title mb-1">
+                                        {{ status.email_address }}
+                                        {% if status.is_default %}
+                                            <span class="badge bg-primary ms-1">默认</span>
+                                        {% endif %}
+                                    </h6>
+                                    <p class="text-muted small mb-2">
+                                        今日额度: {{ status.sent_today }}/{{ status.daily_limit }}
+                                    </p>
+                                </div>
+                                <div class="text-end">
+                                    {% if status.is_quota_exceeded %}
+                                        <span class="badge bg-danger">额度用完</span>
+                                    {% elif status.remaining_quota < 50 %}
+                                        <span class="badge bg-warning">即将用完</span>
+                                    {% else %}
+                                        <span class="badge bg-success">正常</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- 进度条 -->
+                            <div class="progress mb-2" style="height: 6px;">
+                                {% widthratio status.sent_today status.daily_limit 100 as progress_percent %}
+                                <div class="progress-bar {% if status.is_quota_exceeded %}bg-danger{% elif progress_percent > 80 %}bg-warning{% else %}bg-success{% endif %}" 
+                                     role="progressbar" style="width: {{ progress_percent }}%"></div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between small text-muted">
+                                <span>剩余: {{ status.remaining_quota }}</span>
+                                <span>失败: {{ status.failed_today }}</span>
+                            </div>
+                            
+                            <div class="mt-2">
+                                <button class="btn btn-sm btn-outline-primary" onclick="testEmailAccount({{ forloop.counter0 }})">
+                                    <i class="fas fa-plug"></i> 测试连接
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        您还没有配置邮箱账户。请前往 <a href="/admin/jobs/emailaccount/">Django Admin</a> 添加邮箱配置。
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- 邮箱账户详细列表 -->
+            {% if accounts %}
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">邮箱账户详情</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th class="col-email">邮箱地址</th>
+                                    <th class="col-smtp">SMTP服务器</th>
+                                    <th class="col-imap">IMAP服务器</th>
+                                    <th class="col-limit">每日限制</th>
+                                    <th class="col-status">状态</th>
+                                    <th class="col-time">创建时间</th>
+                                    <th class="col-actions">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for account in accounts %}
+                                <tr>
+                                    <td class="text-truncate-table" title="{{ account.email_address }}{% if account.is_default %} (默认){% endif %}">
+                                        <strong>{{ account.email_address }}</strong>
+                                        {% if account.is_default %}
+                                            <span class="badge bg-primary ms-1">默认</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-truncate-table" title="{{ account.smtp_host }}:{{ account.smtp_port }}">{{ account.smtp_host }}:{{ account.smtp_port }}</td>
+                                    <td class="text-truncate-table" title="{% if account.imap_host %}{{ account.imap_host }}:{{ account.imap_port }}{% else %}未配置{% endif %}">
+                                        {% if account.imap_host %}
+                                            {{ account.imap_host }}:{{ account.imap_port }}
+                                        {% else %}
+                                            <span class="text-muted">未配置</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-truncate-table" title="{{ account.daily_send_limit }}">{{ account.daily_send_limit }}</td>
+                                    <td class="text-truncate-table">
+                                        {% if account.smtp_host %}
+                                            <span class="badge bg-success">已配置</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">未配置</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-truncate-table" title="{{ account.created_at|date:'Y-m-d H:i' }}">{{ account.created_at|date:"m-d H:i" }}</td>
+                                    <td>
+                                        <a href="/admin/jobs/emailaccount/{{ account.id }}/change/" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-edit"></i> 编辑
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- 快速操作 -->
+            <div class="row mt-4">
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-plus-circle fa-2x text-primary mb-3"></i>
+                            <h6>添加邮箱</h6>
+                            <p class="text-muted small">配置新的SMTP/IMAP邮箱账户</p>
+                            <a href="/admin/jobs/emailaccount/add/" class="btn btn-primary btn-sm">立即添加</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-download fa-2x text-info mb-3"></i>
+                            <h6>收取邮件</h6>
+                            <p class="text-muted small">手动收取IMAP邮件</p>
+                            <form method="post" action="{% url 'jobs:fetch_emails' %}" style="display: inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="days_back" value="1">
+                                <button type="submit" class="btn btn-info btn-sm">开始收取</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-chart-line fa-2x text-success mb-3"></i>
+                            <h6>查看统计</h6>
+                            <p class="text-muted small">查看详细的发送统计数据</p>
+                            <a href="{% url 'jobs:email_account_stats' %}" class="btn btn-success btn-sm">查看统计</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function testEmailAccount(index) {
+    // 这里可以添加AJAX测试邮箱连接的功能
+    alert('邮箱连接测试功能正在开发中...');
+}
+</script>
+{% endblock %}

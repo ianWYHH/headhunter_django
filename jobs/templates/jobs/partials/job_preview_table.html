@@ -1,36 +1,55 @@
-<form id="save-jobs-form" hx-post="{% url 'jobs:save_jobs' %}">
-    {% csrf_token %}
-    <hr>
-    <h6>解析结果预览</h6>
-    {% if parsed_jobs %}
-    <p class="text-muted">共解析出 {{ parsed_jobs|length }} 条职位，确认无误后请点击保存。</p>
-    <textarea name="jobs_data" style="display: none;">{{ parsed_jobs|json_script:"parsed-data"|safe }}</textarea>
-    <button type="submit" class="btn btn-success">全部保存到数据库</button>
-    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-    {% else %}
-    <p class="text-danger">解析失败或没有有效内容。</p>
-    {% endif %}
-</form>
+<div class="detail-content">
+    <form id="save-jobs-form" hx-post="{% url 'jobs:save_jobs' %}" class="detail-form">
+        {% csrf_token %}
+        <hr>
+        <h5><i class="bi bi-clipboard-check"></i> 解析结果预览</h5>
+        {% if parsed_jobs %}
+            <div class="alert alert-success" role="alert">
+                <i class="bi bi-check-circle"></i>
+                <strong>解析成功！</strong> 共解析出 {{ parsed_jobs|length }} 条职位，确认无误后请点击保存。
+            </div>
+            <textarea name="jobs_data" style="display: none;">{{ parsed_jobs|json_script:"parsed-data"|safe }}</textarea>
+            
+            <div class="detail-actions">
+                <button type="submit" class="btn btn-success btn-lg">
+                    <span class="htmx-indicator spinner-border spinner-border-sm"></span>
+                    <i class="bi bi-database-add"></i> 全部保存到数据库
+                </button>
+                <button type="button" class="btn btn-secondary btn-lg ms-2" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> 取消
+                </button>
+            </div>
+        {% else %}
+            <div class="alert alert-danger" role="alert">
+                <i class="bi bi-exclamation-triangle"></i>
+                <strong>解析失败</strong> - 没有提取到有效的职位内容。
+            </div>
+        {% endif %}
+    </form>
 
-{% if parsed_jobs %}
-<div class="table-responsive mt-3" style="max-height: 400px; overflow-y: auto;">
-    <table class="table table-bordered table-sm">
-        <thead>
-        <tr>
-            <th>公司</th>
-            <th>职位</th>
-            <th>地点</th>
-        </tr>
-        </thead>
-        <tbody>
-        {% for job_data in parsed_jobs %}
-            <tr>
-                <td>{{ job_data.company_name }}</td>
-                <td>{{ job_data.title }}</td>
-                <td>{{ job_data.locations|join:", " }}</td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+    {% if parsed_jobs %}
+    <div class="mt-4">
+        <h6><i class="bi bi-table"></i> 职位概览</h6>
+        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+            <table class="table table-hover table-bordered">
+                <thead class="table-light">
+                <tr>
+                    <th><i class="bi bi-building"></i> 公司</th>
+                    <th><i class="bi bi-briefcase"></i> 职位</th>
+                    <th><i class="bi bi-geo-alt"></i> 地点</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for job_data in parsed_jobs %}
+                    <tr>
+                        <td>{{ job_data.company_name }}</td>
+                        <td>{{ job_data.title }}</td>
+                        <td>{{ job_data.locations|join:", "|default:"未指定" }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
 </div>
-{% endif %}

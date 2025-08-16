@@ -1,0 +1,204 @@
+{% extends 'jobs/base.html' %}
+{% load static %}
+
+{% block title %}{{ action }}联系人 - 联系人管理{% endblock %}
+
+{% block page_icon %}<i class="fas fa-user-plus"></i>{% endblock %}
+
+{% block page_title %}{{ action }}联系人{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{% url 'jobs:index' %}" class="text-decoration-none">
+                <i class="fas fa-home"></i> 首页
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'jobs:contact_list' %}" class="text-decoration-none">
+                <i class="fas fa-users"></i> 联系人管理
+            </a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ action }}联系人</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'jobs:contact_list' %}" class="btn btn-outline-secondary">
+    <i class="fas fa-arrow-left"></i> 返回列表
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i class="fas fa-user-edit"></i> 联系人信息
+                </h5>
+            </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- 基本信息 -->
+                        <div class="form-section">
+                            <h6 class="form-section-title">
+                                <i class="fas fa-user"></i> 基本信息
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    {% include 'jobs/partials/form_field.html' with field=form.name required=True %}
+                                </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.gender.id_for_label }}" class="form-label">
+                                        {{ form.gender.label }}
+                                    </label>
+                                    {{ form.gender }}
+                                    {% if form.gender.errors %}
+                                        <div class="text-danger small">{{ form.gender.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.email.id_for_label }}" class="form-label">
+                                        {{ form.email.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.email }}
+                                    {% if form.email.errors %}
+                                        <div class="text-danger small">{{ form.email.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.phone.id_for_label }}" class="form-label">
+                                        {{ form.phone.label }}
+                                    </label>
+                                    {{ form.phone }}
+                                    {% if form.phone.errors %}
+                                        <div class="text-danger small">{{ form.phone.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 工作信息 -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="border-bottom pb-2 mb-3">
+                                    <i class="fas fa-briefcase"></i> 工作信息
+                                </h6>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.company.id_for_label }}" class="form-label">
+                                        {{ form.company.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.company }}
+                                    {% if form.company.errors %}
+                                        <div class="text-danger small">{{ form.company.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.position.id_for_label }}" class="form-label">
+                                        {{ form.position.label }}
+                                    </label>
+                                    {{ form.position }}
+                                    {% if form.position.errors %}
+                                        <div class="text-danger small">{{ form.position.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.department.id_for_label }}" class="form-label">
+                                        {{ form.department.label }}
+                                    </label>
+                                    {{ form.department }}
+                                    {% if form.department.errors %}
+                                        <div class="text-danger small">{{ form.department.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 附加信息 -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="border-bottom pb-2 mb-3">
+                                    <i class="fas fa-sticky-note"></i> 附加信息
+                                </h6>
+                            </div>
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    <label for="{{ form.notes.id_for_label }}" class="form-label">
+                                        {{ form.notes.label }}
+                                    </label>
+                                    {{ form.notes }}
+                                    {% if form.notes.errors %}
+                                        <div class="text-danger small">{{ form.notes.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 表单错误提示 -->
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {{ form.non_field_errors }}
+                            </div>
+                        {% endif %}
+
+                        <!-- 提交按钮 -->
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{% url 'jobs:contact_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> 取消
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> 保存联系人
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.form-label {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.text-danger {
+    font-size: 0.875rem;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.border-bottom {
+    border-color: #dee2e6 !important;
+}
+
+h6 {
+    color: #495057;
+    font-weight: 600;
+}
+
+
+</style>
+
+
+{% endblock %}

@@ -1,31 +1,82 @@
+{% load search_filters %}
+
 <div class="table-responsive">
-    <table class="table table-striped table-hover">
+    <table class="table table-striped table-hover table-sm">
         <thead>
             <tr class="no-hover">
-                <th scope="col" style="width: 5%;"><input type="checkbox" class="form-check-input" onclick="toggleAll(this)"></th>
-                <th scope="col">姓名</th>
-                <th scope="col">邮箱</th>
+                <th scope="col" style="width: 4%;"><input type="checkbox" class="form-check-input" onclick="toggleAll(this)"></th>
+                <th scope="col" style="width: 8%;">外部ID</th>
+                <th scope="col" style="width: 12%;">姓名</th>
+                <th scope="col" style="width: 6%;">性别</th>
+                <th scope="col" style="width: 6%;">年龄</th>
+                <th scope="col" style="width: 10%;">所在地</th>
+                <th scope="col" style="width: 8%;">学历</th>
+                <th scope="col" style="width: 20%;">邮箱</th>
                 <th scope="col">关键词</th>
-                <th scope="col">最后更新</th>
             </tr>
         </thead>
         <tbody>
             {% for candidate in candidates %}
             <tr>
                 <td class="no-hover"><input type="checkbox" class="form-check-input candidate-checkbox" name="candidate_ids" value="{{ candidate.id }}"></td>
-                <td hx-get="{% url 'jobs:candidate_detail' candidate.id %}" hx-target="#offcanvas-content" hx-swap="innerHTML">{{ candidate.name }}</td>
-                <td hx-get="{% url 'jobs:candidate_detail' candidate.id %}" hx-target="#offcanvas-content" hx-swap="innerHTML">{{ candidate.emails|join:", " }}</td>
-                <td hx-get="{% url 'jobs:candidate_detail' candidate.id %}" hx-target="#offcanvas-content" hx-swap="innerHTML"><span class="text-muted small">{{ candidate.keywords|join:", "|truncatechars:80 }}</span></td>
-                <td hx-get="{% url 'jobs:candidate_detail' candidate.id %}" hx-target="#offcanvas-content" hx-swap="innerHTML">{{ candidate.updated_at|date:"Y-m-d" }}</td>
+                <td hx-get="{% url 'jobs:candidate_detail' candidate.id %}" hx-target="#offcanvas-content" hx-swap="innerHTML"><span class="text-muted small">{{ candidate.external_id|default:"-" }}</span></td>
+                <td hx-get="{% url 'jobs:candidate_detail' candidate.id %}" hx-target="#offcanvas-content" hx-swap="innerHTML"><strong>{{ candidate.name|highlight_keywords:search_keyword }}</strong></td>
+                <td hx-get="{% url 'jobs:candidate_detail' candidate.id %}" hx-target="#offcanvas-content" hx-swap="innerHTML" class="text-center">{{ candidate.get_gender_display|default:"-" }}</td>
+                <td hx-get="{% url 'jobs:candidate_detail' candidate.id %}" hx-target="#offcanvas-content" hx-swap="innerHTML" class="text-center">{% if candidate.age %}{{ candidate.age }}岁{% else %}-{% endif %}</td>
+                <td hx-get="{% url 'jobs:candidate_detail' candidate.id %}" hx-target="#offcanvas-content" hx-swap="innerHTML">{{ candidate.location|highlight_keywords:search_keyword|default:"-" }}</td>
+                <td hx-get="{% url 'jobs:candidate_detail' candidate.id %}" hx-target="#offcanvas-content" hx-swap="innerHTML" class="text-center">{{ candidate.get_education_level_display|default:"-" }}</td>
+                <td hx-get="{% url 'jobs:candidate_detail' candidate.id %}" hx-target="#offcanvas-content" hx-swap="innerHTML"><span class="text-break small">{{ candidate.emails|highlight_keywords:search_keyword }}</span></td>
+                <td hx-get="{% url 'jobs:candidate_detail' candidate.id %}" hx-target="#offcanvas-content" hx-swap="innerHTML"><span class="text-muted small">{% highlight_keywords_tag candidate.keywords search_keyword %}</span></td>
             </tr>
             {% empty %}
             <tr class="no-hover">
-                <td colspan="5" class="text-center text-muted p-4">没有找到符合条件的候选人。</td>
+                <td colspan="9" class="text-center text-muted p-4">没有找到符合条件的候选人。</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
+
+<!-- Include pagination controls -->
+{% include 'jobs/partials/pagination.html' %}
+
+<style>
+.table th, .table td {
+    vertical-align: middle;
+    padding: 0.5rem 0.3rem;
+}
+
+.table th:nth-child(2), .table td:nth-child(2) {
+    /* 外部ID列 */
+    font-family: monospace;
+    font-size: 0.9em;
+}
+
+.table th:nth-child(4), .table td:nth-child(4),
+.table th:nth-child(5), .table td:nth-child(5),
+.table th:nth-child(7), .table td:nth-child(7) {
+    /* 性别、年龄、学历列居中显示 */
+    text-align: center;
+}
+
+.table tbody tr:hover {
+    background-color: #f8f9fa;
+    cursor: pointer;
+}
+
+.candidate-checkbox {
+    margin: 0;
+}
+
+/* Search highlighting styles */
+.search-highlight {
+    background-color: #fff3cd;
+    color: #856404;
+    padding: 0.1rem 0.2rem;
+    border-radius: 0.2rem;
+    font-weight: 500;
+}
+</style>
 
 <script>
     function toggleAll(source) {

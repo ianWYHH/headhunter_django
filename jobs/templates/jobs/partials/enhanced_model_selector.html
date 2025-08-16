@@ -1,0 +1,37 @@
+
+<!-- 增强版AI模型选择器 -->
+<div class="mb-3">
+    <label class="form-label"><strong>选择AI模型</strong></label>
+    <div id="ai-model-selector-enhanced"></div>
+    {% if not enabled_models %}
+        <div class="alert alert-warning mt-2">
+            <i class="fas fa-exclamation-triangle"></i>
+            请先在"API密钥管理"页面添加相应的API密钥以启用AI模型。
+        </div>
+    {% endif %}
+</div>
+
+<script>
+// 模型数据 (从后端传入)
+const enhancedModelsData = [
+    {% for key, model in enabled_models.items %}
+    {
+        key: '{{ key }}',
+        name: '{{ model.name }}',
+        description: '{{ model.description }}',
+        features: {
+            context_length: '{{ model.features.context_length|default:"" }}',
+            free_tokens: '{{ model.features.free_tokens|default:"" }}',
+            suitable_for: '{{ model.features.suitable_for|default:"" }}'
+        }
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+];
+
+// 初始化增强模型选择器
+document.addEventListener('DOMContentLoaded', function() {
+    if (enhancedModelsData.length > 0) {
+        window.modelSelector = initEnhancedModelSelector('ai-model-selector-enhanced', enhancedModelsData);
+    }
+});
+</script>

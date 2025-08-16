@@ -1,0 +1,81 @@
+<!-- 统一页面标题组件 -->
+<div class="page-header">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col">
+                <h1 class="page-title fade-in">
+                    {% if icon %}<i class="{{ icon }}"></i>{% endif %}
+                    {{ title }}
+                </h1>
+                {% if breadcrumbs %}
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        {% for breadcrumb in breadcrumbs %}
+                            {% if breadcrumb.url and not forloop.last %}
+                                <li class="breadcrumb-item">
+                                    <a href="{{ breadcrumb.url }}" class="text-decoration-none">
+                                        {% if breadcrumb.icon %}<i class="{{ breadcrumb.icon }}"></i>{% endif %}
+                                        {{ breadcrumb.name }}
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="breadcrumb-item active" aria-current="page">
+                                    {% if breadcrumb.icon %}<i class="{{ breadcrumb.icon }}"></i>{% endif %}
+                                    {{ breadcrumb.name }}
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                    </ol>
+                </nav>
+                {% endif %}
+            </div>
+            {% if actions %}
+            <div class="col-auto">
+                <div class="btn-toolbar" role="toolbar">
+                    {% for action in actions %}
+                        {% if action.type == 'button' %}
+                            <button type="button" 
+                                    class="btn {{ action.class|default:'btn-primary' }}"
+                                    {% if action.onclick %}onclick="{{ action.onclick }}"{% endif %}
+                                    {% if action.data_attrs %}{% for key, value in action.data_attrs.items %}data-{{ key }}="{{ value }}"{% endfor %}{% endif %}>
+                                {% if action.icon %}<i class="{{ action.icon }}"></i>{% endif %}
+                                {{ action.text }}
+                            </button>
+                        {% elif action.type == 'link' %}
+                            <a href="{{ action.url }}" 
+                               class="btn {{ action.class|default:'btn-primary' }}"
+                               {% if action.target %}target="{{ action.target }}"{% endif %}>
+                                {% if action.icon %}<i class="{{ action.icon }}"></i>{% endif %}
+                                {{ action.text }}
+                            </a>
+                        {% elif action.type == 'dropdown' %}
+                            <div class="dropdown">
+                                <button class="btn {{ action.class|default:'btn-secondary' }} dropdown-toggle" 
+                                        type="button" data-bs-toggle="dropdown">
+                                    {% if action.icon %}<i class="{{ action.icon }}"></i>{% endif %}
+                                    {{ action.text }}
+                                </button>
+                                <ul class="dropdown-menu">
+                                    {% for item in action.items %}
+                                        {% if item.divider %}
+                                            <li><hr class="dropdown-divider"></li>
+                                        {% else %}
+                                            <li>
+                                                <a class="dropdown-item" href="{{ item.url }}"
+                                                   {% if item.onclick %}onclick="{{ item.onclick }}"{% endif %}>
+                                                    {% if item.icon %}<i class="{{ item.icon }}"></i>{% endif %}
+                                                    {{ item.text }}
+                                                </a>
+                                            </li>
+                                        {% endif %}
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>

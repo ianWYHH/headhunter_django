@@ -1,61 +1,79 @@
-<ul class="nav nav-tabs" id="detailTab" role="tablist">
-    <li class="nav-item" role="presentation">
-        <button class="nav-link active" id="view-tab" data-bs-toggle="tab" data-bs-target="#view-pane-{{ job.id }}" type="button">查看详情</button>
-    </li>
-    <li class="nav-item" role="presentation">
-        <button class="nav-link" id="edit-tab" data-bs-toggle="tab" data-bs-target="#edit-pane-{{ job.id }}" type="button">编辑职位</button>
-    </li>
-</ul>
-<div class="tab-content pt-3" id="detailTabContent-{{ job.id }}">
-    <div class="tab-pane fade show active" id="view-pane-{{ job.id }}">
-        <h4>{{ job.title }}</h4>
-        <p class="text-muted">{{ job.company.name }} | {{ job.department|default:"无部门" }}</p>
-        <hr>
-        <p><strong>状态:</strong> <span class="badge bg-info">{{ job.get_status_display }}</span></p>
-        <p><strong>薪资范围:</strong> {{ job.salary_range|default:"N/A" }}</p>
-        <p><strong>职级:</strong> {{ job.level_set|join:", " | default:"N/A" }}</p>
-        <p><strong>地点:</strong> {{ job.locations|join:", " | default:"N/A" }}</p>
-        <p><strong>技能:</strong> <span class="text-break">{{ job.skills|join:", " | default:"N/A" }}</span></p>
-        <hr>
+{% load widget_tweaks %}
 
-        <h6>职位描述</h6>
-        <div class="p-2 bg-light border rounded mb-3" style="white-space: pre-wrap; max-height: 200px; overflow-y: auto;">{{ job.job_description|default:"无" }}</div>
-
-        <h6>职位要求</h6>
-        <div class="p-2 bg-light border rounded mb-3" style="white-space: pre-wrap; max-height: 200px; overflow-y: auto;">{{ job.job_requirement|default:"无" }}</div>
-
-        <h6>备注</h6>
-        <div class="p-2 bg-light border rounded mb-3" style="white-space: pre-wrap; max-height: 150px; overflow-y: auto;">{{ job.notes|default:"无" }}</div>
-
-        <hr>
-        <div class="d-flex justify-content-between align-items-center">
-            <button class="btn btn-danger btn-sm"
-                    hx-post="{% url 'jobs:job_delete' job.id %}"
-                    hx-confirm="您确定要永久删除这个职位吗？">
-                <span class="htmx-indicator spinner-border spinner-border-sm"></span>
-                <i class="bi bi-trash-fill"></i> 删除职位
-            </button>
-            <small class="text-muted">
-                创建于: {{ job.created_at|date:"Y-m-d H:i" }} | 更新于: {{ job.updated_at|date:"Y-m-d H:i" }}
-            </small>
-        </div>
+<div class="detail-page-container">
+    <div class="detail-tabs">
+        <ul class="nav nav-tabs" id="detailTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="view-tab" data-bs-toggle="tab" data-bs-target="#view-pane-{{ job.id }}" type="button">查看详情</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="edit-tab" data-bs-toggle="tab" data-bs-target="#edit-pane-{{ job.id }}" type="button">编辑职位</button>
+            </li>
+        </ul>
     </div>
-
-    <div class="tab-pane fade" id="edit-pane-{{ job.id }}">
-        <form hx-post="{% url 'jobs:job_detail' job.id %}" hx-target="this" hx-swap="outerHTML">
-            {% csrf_token %}
-            {% for field in form.visible_fields %}
-                <div class="mb-3">
-                    {{ field.label_tag }}
-                    {{ field }}
-                    {% if field.errors %}<div class="text-danger small">{{ field.errors|striptags }}</div>{% endif %}
+    <div class="tab-content" id="detailTabContent-{{ job.id }}">
+        <div class="tab-pane fade show active" id="view-pane-{{ job.id }}">
+            <div class="detail-content">
+                <h4>{{ job.title }}</h4>
+                <p class="text-muted">{{ job.company.name }} | {{ job.department|default:"无部门" }}</p>
+                <hr>
+                <div class="detail-info-row">
+                    <p><strong>状态:</strong> <span class="badge bg-info detail-badge">{{ job.get_status_display }}</span></p>
+                    <p><strong>薪资范围:</strong> {{ job.salary_range|default:"N/A" }}</p>
+                    <p><strong>职级:</strong> {{ job.level_set|join:", " | default:"N/A" }}</p>
+                    <p><strong>地点:</strong> {{ job.locations|join:", " | default:"N/A" }}</p>
+                    <p><strong>技能:</strong> <span class="text-break">{{ job.skills|join:", " | default:"N/A" }}</span></p>
                 </div>
-            {% endfor %}
-            {% for field in form.hidden_fields %}{{ field }}{% endfor %}
-            <button type="submit" class="btn btn-primary">
-                <span class="htmx-indicator spinner-border spinner-border-sm"></span>
-                保存更改
-            </button>
-        </form>
+                
+                <h6>职位描述</h6>
+                <div class="detail-content-block">{{ job.job_description|default:"无" }}</div>
+
+                <h6>职位要求</h6>
+                <div class="detail-content-block">{{ job.job_requirement|default:"无" }}</div>
+
+                <h6>备注</h6>
+                <div class="detail-content-block" style="max-height: 150px;">{{ job.notes|default:"无" }}</div>
+
+                <div class="detail-actions d-flex justify-content-between align-items-center">
+                    <button class="btn btn-danger btn-sm"
+                            hx-post="{% url 'jobs:job_delete' job.id %}"
+                            hx-confirm="您确定要永久删除这个职位吗？">
+                        <span class="htmx-indicator spinner-border spinner-border-sm"></span>
+                        <i class="bi bi-trash-fill"></i> 删除职位
+                    </button>
+                    <small class="text-muted">
+                        创建于: {{ job.created_at|date:"Y-m-d H:i" }} | 更新于: {{ job.updated_at|date:"Y-m-d H:i" }}
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="edit-pane-{{ job.id }}">
+            <div class="detail-content">
+                <form hx-post="{% url 'jobs:job_detail' job.id %}" hx-target="this" hx-swap="outerHTML" class="detail-form">
+                    {% csrf_token %}
+                    {% for field in form.visible_fields %}
+                        <div class="mb-3">
+                            {{ field.label_tag }}
+                            {% if field.field.widget.input_type == 'textarea' %}
+                                {% render_field field class="form-control" rows="4" %}
+                            {% elif field.field.widget.input_type == 'select' %}
+                                {% render_field field class="form-select" %}
+                            {% else %}
+                                {% render_field field class="form-control" %}
+                            {% endif %}
+                            {% if field.errors %}<div class="text-danger small">{{ field.errors|striptags }}</div>{% endif %}
+                        </div>
+                    {% endfor %}
+                    {% for field in form.hidden_fields %}{{ field }}{% endfor %}
+                    <div class="detail-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <span class="htmx-indicator spinner-border spinner-border-sm"></span>
+                            保存更改
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 </div>

@@ -1,49 +1,69 @@
 {% extends 'jobs/base.html' %}
+{% load static %}
+
+{% block title %}职位管理 - 猎头管理系统{% endblock %}
+
+{% block page_icon %}<i class="fas fa-briefcase"></i>{% endblock %}
+
+{% block page_title %}职位仪表盘{% endblock %}
+
+{% block page_actions %}
+<button type="button" class="btn btn-primary btn-action" data-bs-toggle="modal" data-bs-target="#addJobModal">
+    <i class="fas fa-plus"></i> 新增职位
+</button>
+{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">职位仪表盘</h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addJobModal">
-            <i class="bi bi-plus-circle-fill"></i> 新增职位 (AI 解析)
-        </button>
+
+<!-- 筛选表单 -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h6 class="card-title mb-0">
+            <i class="fas fa-filter"></i> 职位筛选
+        </h6>
+    </div>
+    <div class="card-body">
+        <form id="filter-form"
+              hx-get="{% url 'jobs:job_list_partial' %}"
+              hx-target="#job-list-container"
+              hx-trigger="change, keyup delay:300ms from:[name='search']"
+              class="row g-3">
+            <input type="hidden" name="page" value="1">
+            <div class="col-md-4">
+                <label for="search" class="form-label">关键词搜索</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    <input type="text" name="search" id="search" class="form-control" 
+                           placeholder="职位名、公司、技能...">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label for="company" class="form-label">公司</label>
+                <select name="company" id="company" class="form-select">
+                    <option value="">所有公司</option>
+                    {% for c in companies %}
+                    <option value="{{ c.id }}">{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="status" class="form-label">状态</label>
+                <select name="status" id="status" class="form-select">
+                    <option value="">所有状态</option>
+                    {% for key, value in statuses %}
+                    <option value="{{ key }}">{{ value }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 align-self-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <span class="htmx-indicator spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                    <i class="fas fa-search"></i> 筛选
+                </button>
+            </div>
+        </form>
     </div>
 </div>
-
-<form id="filter-form"
-      hx-get="{% url 'jobs:job_list_partial' %}"
-      hx-target="#job-list-container"
-      hx-trigger="change, keyup delay:300ms from:[name='search']"
-      class="row g-3 mb-4 p-3 bg-light border rounded">
-    <div class="col-md-4">
-        <label for="search" class="form-label">关键词搜索</label>
-        <input type="text" name="search" id="search" class="form-control" placeholder="职位名、公司、技能...">
-    </div>
-    <div class="col-md-3">
-        <label for="company" class="form-label">公司</label>
-        <select name="company" id="company" class="form-select">
-            <option value="">所有公司</option>
-            {% for c in companies %}
-            <option value="{{ c.id }}">{{ c.name }}</option>
-            {% endfor %}
-        </select>
-    </div>
-    <div class="col-md-3">
-        <label for="status" class="form-label">状态</label>
-        <select name="status" id="status" class="form-select">
-            <option value="">所有状态</option>
-            {% for key, value in statuses %}
-            <option value="{{ key }}">{{ value }}</option>
-            {% endfor %}
-        </select>
-    </div>
-    <div class="col-md-2 align-self-end">
-        <button type="submit" class="btn btn-primary w-100">
-            <span class="htmx-indicator spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-            筛选
-        </button>
-    </div>
-</form>
 
 <div id="job-list-container"
      hx-get="{% url 'jobs:job_list_partial' %}"
@@ -55,4 +75,19 @@
 </div>
 
 {% include 'jobs/partials/job_add_modal.html' %}
+
+<script>
+// Reset pagination when search filters change
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('filter-form');
+    if (form) {
+        form.addEventListener('input', function() {
+            const pageInput = form.querySelector('input[name="page"]');
+            if (pageInput) {
+                pageInput.value = '1';
+            }
+        });
+    }
+});
+</script>
 {% endblock %}

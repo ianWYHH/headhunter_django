@@ -1,0 +1,200 @@
+<!-- 文件内容预览（未AI解析） -->
+<div class="detail-content">
+    <h5><i class="bi bi-file-earmark-text"></i> 内容预览</h5>
+    <p class="text-muted mb-4">已提取 {{ total_items_to_parse }} 条待解析的内容，请选择AI模型进行解析。</p>
+    
+    <!-- 预览内容 -->
+    <div class="accordion mt-3" id="preview-accordion">
+        {% for text in preview_texts %}
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#preview-{{ forloop.counter0 }}">
+                    <i class="bi bi-file-text me-2"></i>
+                    第 {{ forloop.counter }} 条内容 ({{ text|length }} 字符)
+                </button>
+            </h2>
+            <div id="preview-{{ forloop.counter0 }}" class="accordion-collapse collapse" data-bs-parent="#preview-accordion">
+                <div class="accordion-body">
+                    <div class="bg-light p-3 rounded">
+                        <pre class="mb-0" style="white-space: pre-wrap;">{{ text|truncatechars:500 }}</pre>
+                        {% if text|length > 500 %}
+                        <small class="text-muted">（内容已截断，显示前500字符）</small>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- AI解析表单 -->
+    <div class="mt-4">
+        <form id="ai-parse-form" method="post"
+              hx-post="{% if content_type == 'job' %}{% url 'jobs:parse_jobs' %}{% else %}{% url 'jobs:parse_candidates' %}{% endif %}"
+              hx-target="#parsing-result"
+              hx-swap="innerHTML">
+            {% csrf_token %}
+            <!-- 隐藏字段保存完整文本 -->
+            <input type="hidden" name="text_content" value="{{ full_text }}">
+            
+            <div class="row align-items-end">
+                <div class="col-md-6">
+                    <label for="model_provider" class="form-label"><strong>选择解析模型</strong></label>
+                    {% if not enabled_models %}
+                        <select name="model_provider" id="model_provider" class="form-select" disabled>
+                            <option value="">请先在"API密钥管理"页面添加密钥</option>
+                        </select>
+                        <div class="alert alert-warning mt-2">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            请先在"API密钥管理"页面添加相应的API密钥以启用AI模型。
+                        </div>
+                    {% else %}
+                        <select name="model_provider" id="model_provider" class="form-select enhanced-model-selector">
+                            {% for key, model in enabled_models.items %}
+                                <option value="{{ key }}" 
+                                        data-description="{{ model.description }}"
+                                        data-context="{{ model.features.context_length|default:'标准' }}"
+                                        data-scenario="{{ model.features.suitable_for|default:'通用场景' }}"
+                                        {% if key == 'qwen_plus' %}selected{% endif %}>
+                                    {{ model.name }}
+                                    {% if model.features.context_length %} ({{ model.features.context_length }}){% endif %}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        
+                        <!-- 模型信息显示区域 -->
+                        <div id="model-info" class="mt-2 p-2 bg-light rounded" style="display: none;">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <small class="text-muted">
+                                        <strong>模型描述:</strong> <span id="model-description"></span>
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="row mt-1">
+                                <div class="col-md-6">
+                                    <small class="text-muted">
+                                        <strong>上下文:</strong> <span id="model-context"></span>
+                                    </small>
+                                </div>
+                                <div class="col-md-6">
+                                    <small class="text-muted">
+                                        <strong>适用场景:</strong> <span id="model-scenario"></span>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6 text-md-end mt-3 mt-md-0">
+                    <button type="button" class="btn btn-secondary me-2" 
+                            onclick="resetJobModal()">
+                        <i class="fas fa-arrow-left"></i> 返回上传
+                    </button>
+                    <button type="submit" class="btn btn-success" {% if not enabled_models %}disabled{% endif %}>
+                        <span class="htmx-indicator spinner-border spinner-border-sm"></span>
+                        <i class="fas fa-magic"></i> 开始AI解析
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 解析结果显示区域 -->
+<div id="parsing-result" class="mt-4">
+    <!-- AI解析结果将显示在这里 -->
+</div>
+
+<style>
+.enhanced-model-selector {
+    position: relative;
+}
+
+#model-info {
+    border-left: 4px solid #007bff;
+    transition: all 0.3s ease;
+}
+
+.model-feature-tag {
+    background: #e3f2fd;
+    color: #1976d2;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 0.7em;
+    margin-right: 4px;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modelSelect = document.getElementById('model_provider');
+    const modelInfo = document.getElementById('model-info');
+    const modelDescription = document.getElementById('model-description');
+    const modelContext = document.getElementById('model-context');
+    const modelScenario = document.getElementById('model-scenario');
+    
+    function updateModelInfo() {
+        const selectedOption = modelSelect.options[modelSelect.selectedIndex];
+        
+        if (selectedOption && selectedOption.value) {
+            const description = selectedOption.getAttribute('data-description') || '暂无描述';
+            const context = selectedOption.getAttribute('data-context') || '标准';
+            const scenario = selectedOption.getAttribute('data-scenario') || '通用场景';
+            
+            modelDescription.textContent = description;
+            modelContext.textContent = context;
+            modelScenario.textContent = scenario;
+            
+            modelInfo.style.display = 'block';
+        } else {
+            modelInfo.style.display = 'none';
+        }
+    }
+    
+    // 初始化显示
+    if (modelSelect) {
+        updateModelInfo();
+        
+        // 监听选择变化
+        modelSelect.addEventListener('change', updateModelInfo);
+    }
+});
+
+// 重置职位模态框到初始状态
+function resetJobModal() {
+    const modalContent = document.getElementById('add-job-modal-content');
+    if (modalContent) {
+        modalContent.innerHTML = `
+            <div class="detail-content">
+                <form hx-post="/preview-jobs/"
+                      hx-target="#add-job-modal-content"
+                      hx-encoding="multipart/form-data"
+                      class="detail-form">
+                    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                    <div class="mb-3">
+                        <label for="id_file_upload_job" class="form-label">上传文件</label>
+                        <input type="file" name="file_upload" class="form-control" id="id_file_upload_job">
+                        <div class="form-text">支持 TXT、XLSX、DOCX、PDF 等格式文件</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_text_content_job" class="form-label">或粘贴文本内容</label>
+                        <textarea name="text_content" cols="40" rows="5" class="form-control" id="id_text_content_job" placeholder="请粘贴职位描述文本内容..."></textarea>
+                        <div class="form-text">可直接粘贴职位描述文本</div>
+                    </div>
+                    <div class="detail-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <span class="htmx-indicator spinner-border spinner-border-sm"></span>
+                            <i class="bi bi-search"></i> 读取并预览内容
+                        </button>
+                    </div>
+                </form>
+            </div>
+        `;
+        // 重新初始化HTMX
+        if (window.htmx) {
+            htmx.process(modalContent);
+        }
+    }
+}
+</script>

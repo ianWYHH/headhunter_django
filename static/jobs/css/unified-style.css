@@ -1,0 +1,1346 @@
+/* 
+ * 猎头管理系统 - 统一风格样式表
+ * 确保所有页面保持一致的视觉风格和用户体验
+ * 修复新增职位按钮显示问题 + 候选人编辑滚动问题 - 版本: v3.3
+ */
+
+/* ==================== 全局样式 ==================== */
+:root {
+    /* 主题色彩 */
+    --primary-color: #0d6efd;
+    --secondary-color: #6c757d;
+    --success-color: #198754;
+    --info-color: #0dcaf0;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+    --light-color: #f8f9fa;
+    --dark-color: #212529;
+    
+    /* 间距 */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 3rem;
+    
+    /* 边框 */
+    --border-color: #dee2e6;
+    
+    /* 文字颜色 */
+    --text-primary: #212529;
+    --text-secondary: #6c757d;
+    
+    /* 圆角 */
+    --border-radius-sm: 0.25rem;
+    --border-radius-md: 0.375rem;
+    --border-radius-lg: 0.5rem;
+    
+    /* 阴影 */
+    --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    --shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    --shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.175);
+    
+    /* 字体 - 优化版本 */
+    --font-size-xs: 0.75rem;      /* 12px */
+    --font-size-sm: 0.875rem;     /* 14px */
+    --font-size-base: 1rem;       /* 16px - 主要正文字体 */
+    --font-size-lg: 1.125rem;     /* 18px */
+    --font-size-xl: 1.25rem;      /* 20px */
+    --font-size-xxl: 1.5rem;      /* 24px - 标题字体 */
+    --font-size-xxxl: 1.75rem;    /* 28px - 大标题字体 */
+    
+    /* 行高 */
+    --line-height-tight: 1.25;
+    --line-height-normal: 1.5;
+    --line-height-relaxed: 1.75;
+    
+    /* Logo尺寸 */
+    --logo-width-mobile: 120px;
+    --logo-width-tablet: 180px;
+    --logo-width-desktop: 200px;
+}
+
+/* 全局背景和基础样式 - 优化字体设置 */
+body {
+    background-color: var(--light-color);
+    font-family: "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    font-size: var(--font-size-base);  /* 16px 正文字体 */
+    line-height: var(--line-height-normal);  /* 1.5倍行高 */
+    color: var(--dark-color);
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ==================== 标题样式优化 - 现代简洁版 ==================== */
+h1, .h1 {
+    font-size: var(--font-size-xxl);   /* 24px - 减小主标题 */
+    font-weight: 500;                  /* 减轻字重 */
+    line-height: var(--line-height-tight);
+    margin-bottom: var(--spacing-md);
+}
+
+h2, .h2 {
+    font-size: var(--font-size-xl);    /* 20px */
+    font-weight: 500;                  /* 减轻字重 */
+    line-height: var(--line-height-tight);
+    margin-bottom: var(--spacing-md);
+}
+
+h3, .h3 {
+    font-size: var(--font-size-lg);    /* 18px */
+    font-weight: 500;                  /* 减轻字重 */
+    line-height: var(--line-height-normal);
+    margin-bottom: var(--spacing-sm);
+}
+
+h4, .h4 {
+    font-size: var(--font-size-base);  /* 16px */
+    font-weight: 500;
+    line-height: var(--line-height-normal);
+    margin-bottom: var(--spacing-sm);
+}
+
+h5, .h5, h6, .h6 {
+    font-size: var(--font-size-sm);    /* 14px */
+    font-weight: 500;
+    line-height: var(--line-height-normal);
+    margin-bottom: var(--spacing-sm);
+}
+
+/* ==================== Logo 样式优化 ==================== */
+.navbar-brand img,
+.logo,
+.brand-logo {
+    width: var(--logo-width-desktop);
+    height: auto;
+    max-width: 100%;
+    transition: all 0.3s ease;
+}
+
+/* ==================== 正文和段落优化 ==================== */
+p, .text-content {
+    font-size: var(--font-size-base);  /* 16px */
+    line-height: var(--line-height-normal);  /* 1.5 */
+    margin-bottom: var(--spacing-md);
+}
+
+small, .small {
+    font-size: var(--font-size-sm);    /* 14px */
+    line-height: var(--line-height-normal);
+}
+
+/* 改善可读性 */
+.text-muted {
+    color: #6c757d !important;
+}
+
+/* ==================== 导航栏统一样式 ==================== */
+.navbar {
+    box-shadow: var(--shadow-sm);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.navbar-brand {
+    font-weight: 600;
+    font-size: var(--font-size-lg);
+}
+
+.nav-link {
+    transition: all 0.3s ease;
+    border-radius: var(--border-radius-sm);
+    margin: 0 var(--spacing-xs);
+}
+
+.nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
+}
+
+.nav-link.active {
+    background-color: rgba(255, 255, 255, 0.2);
+    font-weight: 600;
+}
+
+/* ==================== 页面标题统一样式 - 极简版 ==================== */
+.page-header {
+    /* 只隐藏标题部分，保留操作按钮区域 */
+    background: transparent;
+    padding: 0.25rem 0;
+    margin-bottom: 0.5rem;
+}
+
+.page-header .page-title {
+    /* 隐藏页面标题 */
+    display: none;
+}
+
+.page-header .col:first-child {
+    /* 隐藏包含标题的列 */
+    display: none;
+}
+
+.page-title {
+    /* 页面内嵌标题样式 - 极简 */
+    font-size: 14px;  /* 极小字体 */
+    font-weight: 400;  /* 正常字重 */
+    color: var(--text-secondary);
+    margin: 0 0 var(--spacing-xs) 0;  /* 极小下边距 */
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    opacity: 0.7;  /* 降低透明度，减少视觉影响 */
+}
+
+.page-title i {
+    /* 隐藏页面标题图标 */
+    display: none;
+}
+
+/* 所有页面的主标题统一样式 - 极简版 */
+h1, .h1, h2, .h2 {
+    font-size: 14px !important;  /* 极小字体 */
+    font-weight: 400 !important;  /* 正常字重 */
+    color: var(--text-secondary) !important;  /* 次要文本颜色 */
+    line-height: var(--line-height-tight);
+    margin: 0 0 var(--spacing-xs) 0 !important;  /* 极小下边距 */
+    opacity: 0.7;  /* 降低透明度 */
+}
+
+/* ==================== 卡片统一样式 - 极简紧凑版 ==================== */
+.card {
+    border: none;
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+    margin-bottom: var(--spacing-sm);  /* 进一步减少卡片间距 */
+}
+
+/* 第一个卡片消除顶部边距 */
+.card:first-of-type {
+    margin-top: 0;
+}
+
+.card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);  /* 减少悬停效果 */
+}
+
+.card-header {
+    background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+    border-bottom: 1px solid #e9ecef;  /* 更细的边框 */
+    border-radius: var(--border-radius-md) var(--border-radius-md) 0 0 !important;
+    padding: var(--spacing-xs) var(--spacing-sm);  /* 极小内边距 */
+}
+
+.card-title {
+    font-weight: 500;
+    font-size: var(--font-size-xs);  /* 12px - 极小的卡片标题 */
+    color: var(--dark-color);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);  /* 减少间距 */
+}
+
+.card-title i {
+    color: var(--primary-color);
+    font-size: 0.9em;  /* 极小的图标 */
+}
+
+.card-body {
+    padding: var(--spacing-sm);  /* 进一步减少内边距 */
+}
+
+/* ==================== 按钮统一样式 - 紧凑版 ==================== */
+.btn {
+    border-radius: var(--border-radius-sm);  /* 更小的圆角 */
+    font-weight: 400;
+    padding: 0.375rem 0.75rem;  /* 更紧凑的内边距 */
+    font-size: var(--font-size-xs);  /* 12px 统一小字体 */
+    line-height: 1.3;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;  /* 减少图标和文字间距 */
+    text-decoration: none;
+    border: 1px solid transparent;
+    min-height: 32px;  /* 更紧凑的标准高度 */
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+/* 按钮尺寸统一化 - 更紧凑 */
+.btn-sm {
+    padding: 0.25rem 0.5rem;  /* 超紧凑 */
+    font-size: 0.7rem;  /* 11px */
+    min-height: 28px;
+}
+
+.btn-lg {
+    padding: 0.5rem 1rem;  /* 中等尺寸 */
+    font-size: var(--font-size-sm);  /* 14px */
+    min-height: 36px;
+}
+
+/* 特殊按钮样式优化 */
+.btn-action {
+    min-width: 70px;  /* 减少最小宽度 */
+    justify-content: center;
+}
+
+/* 按钮组统一间距 */
+.btn-group .btn {
+    margin: 0;
+}
+
+.btn-group .btn + .btn {
+    margin-left: 0;
+}
+
+.btn-toolbar .btn {
+    margin-right: var(--spacing-sm);
+}
+
+.btn-toolbar .btn:last-child {
+    margin-right: 0;
+}
+
+/* 特殊按钮样式 */
+.btn-action {
+    min-width: 80px;
+    justify-content: center;
+}
+
+/* 表格中的按钮组 */
+.table .btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: var(--font-size-xs);
+    min-height: 28px;
+    font-weight: 400;
+}
+
+/* 页面动作按钮区域 */
+.page-actions .btn {
+    margin-right: var(--spacing-sm);
+}
+
+.page-actions .btn:last-child {
+    margin-right: 0;
+}
+
+/* ==================== 表单统一样式 - 紧凑版 ==================== */
+.form-label {
+    font-weight: 500;
+    font-size: var(--font-size-xs);  /* 12px - 更小的标签 */
+    color: var(--dark-color);
+    margin-bottom: 0.25rem;  /* 减少标签和输入框间距 */
+}
+
+/* 表单控件紧凑化 */
+.form-control,
+.form-select {
+    padding: 0.375rem 0.75rem;  /* 减少内边距 */
+    font-size: var(--font-size-xs);  /* 12px */
+}
+
+/* 表单分组样式优化 */
+.form-section {
+    background: #fff;
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-md);  /* 减少内边距 */
+    margin-bottom: var(--spacing-md);
+    border: 1px solid #e9ecef;
+}
+
+.form-control,
+.form-select,
+.form-check-input {
+    border-radius: var(--border-radius-md);
+    border: 1px solid #dee2e6;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.form-control:hover,
+.form-select:hover {
+    border-color: #adb5bd;
+}
+
+/* 表单分组样式 */
+.form-section {
+    background: #fff;
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+    border: 1px solid #e9ecef;
+}
+
+.form-section-title {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--dark-color);
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 2px solid var(--primary-color);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.form-section-title i {
+    color: var(--primary-color);
+}
+
+/* 必填字段标识 */
+.required {
+    color: var(--danger-color);
+    font-weight: 600;
+}
+
+/* 表单错误样式 */
+.is-invalid {
+    border-color: var(--danger-color);
+}
+
+.invalid-feedback,
+.text-danger {
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+}
+
+/* ==================== 表格统一样式 - 优化版 ==================== */
+.table {
+    border-radius: var(--border-radius-md);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 0;
+    table-layout: fixed;  /* 固定表格布局 */
+    width: 100%;
+}
+
+.table thead th {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-bottom: 2px solid var(--primary-color);
+    font-weight: 500;  /* 减轻字重 */
+    color: var(--dark-color);
+    padding: var(--spacing-sm) var(--spacing-md);  /* 减少垂直边距 */
+    font-size: var(--font-size-sm);  /* 使用更小字体 */
+}
+
+.table tbody td {
+    padding: var(--spacing-sm) var(--spacing-md);  /* 减少垂直边距 */
+    vertical-align: middle;
+    border-bottom: 1px solid #e9ecef;
+    font-size: var(--font-size-sm);  /* 使用更小字体 */
+}
+
+.table-hover tbody tr:hover {
+    background-color: #f8f9fa;
+    cursor: pointer;
+}
+
+/* 表格操作按钮 */
+.table .btn-group {
+    gap: var(--spacing-xs);
+}
+
+/* ==================== 表格列宽度控制 - 紧凑版 ==================== */
+/* 联系人管理页面 */
+.table .col-name { width: 15%; min-width: 100px; }
+.table .col-email { width: 18%; min-width: 150px; }
+.table .col-phone { width: 12%; min-width: 100px; }
+.table .col-position { width: 15%; min-width: 120px; }
+.table .col-company { width: 15%; min-width: 120px; }
+.table .col-department { width: 10%; min-width: 80px; }
+.table .col-group { width: 10%; min-width: 80px; }
+.table .col-status { width: 8%; min-width: 60px; }
+.table .col-time { width: 10%; min-width: 80px; }
+.table .col-actions { width: 12%; min-width: 100px; }
+
+/* 邮箱管理页面 */
+.table .col-smtp { width: 18%; min-width: 140px; }
+.table .col-imap { width: 18%; min-width: 140px; }
+.table .col-limit { width: 10%; min-width: 80px; }
+
+/* 收件管理页面 */
+.table .col-checkbox { width: 5%; min-width: 40px; }
+.table .col-email-status { width: 10%; min-width: 80px; }
+.table .col-sender { width: 22%; min-width: 160px; }
+.table .col-subject { width: 28%; min-width: 200px; }
+.table .col-email-type { width: 12%; min-width: 80px; }
+
+/* 职位和分组管理页面 */
+.table .col-job-title { width: 25%; min-width: 180px; }
+.table .col-job-company { width: 15%; min-width: 120px; }
+.table .col-job-status { width: 10%; min-width: 80px; }
+.table .col-job-skills { width: 20%; min-width: 150px; }
+.table .col-description { width: 30%; min-width: 200px; }
+.table .col-member-count { width: 10%; min-width: 80px; }
+.table .col-created { width: 12%; min-width: 100px; }
+
+/* ==================== 文本溢出处理 - 增强版 ==================== */
+.text-truncate-table {
+    max-width: 0;  /* 重要：让表格单元格能够截断 */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    position: relative;
+}
+
+/* 强制表格内所有文本都进行截断处理 */
+.table td:not(.no-truncate) {
+    max-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 特殊的文本截断类 */
+.text-truncate-long {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.text-truncate-medium {
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.text-truncate-short {
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 悬停提示 */
+.text-truncate-table[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 0.5rem;
+    border-radius: var(--border-radius-sm);
+    font-size: var(--font-size-xs);
+    white-space: nowrap;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 0.25rem;
+    box-shadow: var(--shadow-md);
+}
+
+/* Bootstrap tooltip增强 */
+.tooltip .tooltip-inner {
+    background-color: rgba(0, 0, 0, 0.9);
+    border-radius: var(--border-radius-sm);
+    font-size: var(--font-size-xs);
+    max-width: 300px;
+    padding: 0.5rem;
+}
+
+/* ==================== 统计卡片样式 - 极致紧凑版 ==================== */
+.stats-card {
+    background: linear-gradient(135deg, var(--primary-color) 0%, #0056b3 100%) !important;
+    border-radius: var(--border-radius-sm) !important;
+    color: white !important;
+    padding: 0.25rem 0.375rem !important;  /* 极小内边距 */
+    margin-bottom: 0 !important;           /* 移除下边距 */
+    margin-top: 0 !important;              /* 移除顶部边距 */
+    transition: all 0.3s ease;
+    max-height: 60px !important;           /* 极小高度 */
+    min-height: 50px !important;           /* 极小最小高度 */
+    min-width: 85px !important;            /* 最小宽度确保内容显示 */
+    flex: 1 !important;                    /* 平均分配空间 */
+    text-align: center !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    border: none !important;               /* 移除边框 */
+    box-shadow: var(--shadow-sm) !important;
+}
+
+.stats-card:hover {
+    transform: translateY(-2px);  /* 减少悬停位移 */
+    box-shadow: var(--shadow-md);  /* 减少阴影 */
+}
+
+.stats-card.bg-success {
+    background: linear-gradient(135deg, var(--success-color) 0%, #146c43 100%);
+}
+
+.stats-card.bg-info {
+    background: linear-gradient(135deg, var(--info-color) 0%, #0a98ba 100%);
+}
+
+.stats-card.bg-warning {
+    background: linear-gradient(135deg, var(--warning-color) 0%, #cc9900 100%);
+    color: var(--dark-color);
+}
+
+.stats-card.bg-danger {
+    background: linear-gradient(135deg, var(--danger-color) 0%, #b02a37 100%);
+}
+
+.stats-number {
+    font-size: 1rem !important;     /* 极小的数字字体：16px */
+    font-weight: 600 !important;
+    line-height: 1 !important;
+    margin-bottom: 0.05rem !important;  /* 极小间距 */
+    margin-top: 0 !important;
+}
+
+.stats-label {
+    font-size: 0.6rem !important;   /* 极小的标签字体：9px */
+    opacity: 0.9 !important;
+    font-weight: 400 !important;
+    line-height: 1 !important;      /* 极紧凑的行高 */
+    margin-bottom: 0 !important;
+    margin-top: 0 !important;
+}
+
+.stats-subtitle {
+    font-size: 0.7rem;  /* 副标题字体 */
+    opacity: 0.8;
+    font-weight: 300;
+}
+
+/* 隐藏图标相关元素 */
+.stats-icon-container {
+    display: none;
+}
+
+.stats-icon {
+    display: none;
+}
+
+/* 统计卡片网格布局优化 - 单列极简版 */
+.stats-grid {
+    display: flex !important;
+    flex-direction: row !important;  /* 水平排列 */
+    flex-wrap: nowrap !important;    /* 不换行 */
+    gap: 0.25rem !important;         /* 极小间距 */
+    margin-top: 0 !important;        /* 移除顶部边距 */
+    margin-bottom: 0.25rem !important;  /* 极小下边距 */
+    overflow-x: auto;                /* 如果内容太宽允许水平滚动 */
+}
+
+/* Bootstrap grid 覆盖已移除，不再需要这些规则 */
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+    .stats-grid {
+        gap: 0.2rem !important;  /* 更小间距 */
+    }
+    
+    .stats-card {
+        max-height: 55px !important;   /* 更紧凑的移动端高度 */
+        min-height: 45px !important;
+        min-width: 70px !important;    /* 减少最小宽度 */
+        padding: 0.2rem !important;    /* 极小内边距 */
+    }
+    
+    .stats-number {
+        font-size: 0.9rem !important;  /* 更小的数字字体：14px */
+    }
+    
+    .stats-label {
+        font-size: 0.55rem !important; /* 更小的标签字体：8px */
+    }
+}
+
+/* ==================== 分页统一样式 ==================== */
+.pagination {
+    border-radius: var(--border-radius-md);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+.page-link {
+    border: none;
+    color: var(--primary-color);
+    font-weight: 500;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.page-link:hover {
+    background-color: var(--primary-color);
+    color: white;
+    transform: translateY(-1px);
+}
+
+.page-item.active .page-link {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    font-weight: 600;
+}
+
+/* ==================== 标签和徽章样式 ==================== */
+.badge {
+    font-weight: 500;
+    border-radius: var(--border-radius-md);
+    padding: 0.5em 0.75em;
+}
+
+/* ==================== 响应式设计 - 增强版 ==================== */
+@media (max-width: 768px) {
+    /* 页面标题优化 - 移动端极简 */
+    .page-title {
+        font-size: 12px;  /* 更小的移动端字体 */
+        flex-direction: row;
+        align-items: center;
+        gap: var(--spacing-xs);
+        margin-bottom: 0.25rem;
+    }
+    
+    .page-header {
+        /* 移动端保持操作按钮显示 */
+        background: transparent;
+        padding: 0.25rem 0;
+        margin-bottom: 0.5rem;
+    }
+    
+    .page-header .col:first-child {
+        /* 移动端也隐藏标题列 */
+        display: none;
+    }
+    
+    /* 卡片布局优化 */
+    .card-body {
+        padding: var(--spacing-md);
+    }
+    
+    .card-header {
+        padding: var(--spacing-sm) var(--spacing-md);
+    }
+    
+    /* 按钮组优化 */
+    .btn-group-vertical .btn {
+        margin-bottom: var(--spacing-xs);
+    }
+    
+    .page-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--spacing-xs);
+    }
+    
+    .page-actions .btn {
+        margin-right: 0;
+        flex: 1;
+        min-width: auto;
+    }
+    
+    /* 统计卡片移动端优化 - 已移至上方统一管理 */
+    
+    /* 表格响应式优化 */
+    .table-responsive {
+        border-radius: var(--border-radius-md);
+        font-size: var(--font-size-xs);
+    }
+    
+    .table th, .table td {
+        padding: var(--spacing-xs) var(--spacing-sm);
+    }
+    
+    /* 隐藏非关键列 */
+    .table .col-department,
+    .table .col-time,
+    .table .col-limit,
+    .table .col-email-type {
+        display: none;
+    }
+    
+    /* 搜索表单优化 */
+    .card .row.g-3 > div {
+        margin-bottom: var(--spacing-sm);
+    }
+}
+
+@media (max-width: 576px) {
+    /* 容器优化 */
+    .container-fluid {
+        padding-left: var(--spacing-sm);
+        padding-right: var(--spacing-sm);
+    }
+    
+    /* 统计卡片小屏优化 */
+    .stats-grid {
+        flex-wrap: wrap !important;    /* 小屏允许换行 */
+        gap: 0.15rem !important;       /* 极小间距 */
+    }
+    
+    .stats-card {
+        max-height: 50px !important;   /* 超紧凑的小屏高度 */
+        min-height: 40px !important;
+        min-width: 60px !important;    /* 减少最小宽度 */
+        padding: 0.15rem !important;   /* 极小内边距 */
+        flex: 0 1 calc(50% - 0.1rem) !important;  /* 小屏两列布局 */
+    }
+    
+    .stats-number {
+        font-size: 0.8rem !important;  /* 13px - 小屏紧凑字体 */
+    }
+    
+    .stats-label {
+        font-size: 0.5rem !important;  /* 8px - 超小标签 */
+    }
+    
+    /* 按钮优化 */
+    .btn {
+        font-size: var(--font-size-xs);
+        padding: 0.375rem 0.5rem;
+        min-height: 32px;
+    }
+    
+    /* 表格进一步优化 */
+    .table {
+        font-size: 0.7rem;
+    }
+    
+    .table .col-company,
+    .table .col-phone,
+    .table .col-smtp,
+    .table .col-imap,
+    .table .col-sender {
+        display: none;  /* 超小屏隐藏更多列 */
+    }
+    
+    /* 页面动作区域 */
+    .page-actions .btn {
+        font-size: var(--font-size-xs);
+        padding: 0.25rem 0.5rem;
+    }
+}
+
+/* ==================== 工具类 ==================== */
+.border-primary {
+    border-color: var(--primary-color) !important;
+}
+
+.text-primary {
+    color: var(--primary-color) !important;
+}
+
+.bg-light-primary {
+    background-color: rgba(13, 110, 253, 0.1) !important;
+}
+
+.rounded-lg {
+    border-radius: var(--border-radius-lg) !important;
+}
+
+.shadow-custom {
+    box-shadow: var(--shadow-md) !important;
+}
+
+/* 加载动画 */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.spinner-custom {
+    color: var(--primary-color);
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: var(--border-radius-sm);
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: var(--border-radius-sm);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* ==================== 特殊效果 ==================== */
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.slide-in {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(0); }
+}
+
+/* ==================== 打印样式 ==================== */
+/* ==================== 响应式设计 - 移动设备优化 ==================== */
+
+/* 小屏设备 (手机) - 最大宽度 576px */
+@media (max-width: 576px) {
+    /* 字体大小优化 */
+    body {
+        font-size: 0.9rem;  /* 14.4px */
+    }
+    
+    h1, .h1 {
+        font-size: 1.5rem;  /* 24px */
+    }
+    
+    h2, .h2 {
+        font-size: 1.25rem; /* 20px */
+    }
+    
+    h3, .h3 {
+        font-size: 1.125rem; /* 18px */
+    }
+    
+    /* Logo 尺寸 */
+    .navbar-brand img,
+    .logo,
+    .brand-logo {
+        width: var(--logo-width-mobile); /* 120px */
+    }
+    
+    /* 按钮优化 */
+    .btn {
+        font-size: 0.875rem;
+        padding: 0.5rem 0.75rem;
+    }
+    
+    .btn-sm {
+        font-size: 0.75rem;
+        padding: 0.375rem 0.5rem;
+    }
+    
+    /* 表格优化 */
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+    
+    /* 卡片间距优化 */
+    .card {
+        margin-bottom: 1rem;
+    }
+    
+    .container-fluid {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+}
+
+/* 中等屏设备 (平板) - 576px 到 768px */
+@media (min-width: 576px) and (max-width: 768px) {
+    /* Logo 尺寸 */
+    .navbar-brand img,
+    .logo,
+    .brand-logo {
+        width: var(--logo-width-tablet); /* 180px */
+    }
+    
+    body {
+        font-size: 0.95rem; /* 15.2px */
+    }
+    
+    h1, .h1 {
+        font-size: 1.625rem; /* 26px */
+    }
+    
+    h2, .h2 {
+        font-size: 1.375rem; /* 22px */
+    }
+}
+
+/* 大屏设备 (桌面) - 最小宽度 768px */
+@media (min-width: 768px) {
+    /* Logo 尺寸 */
+    .navbar-brand img,
+    .logo,
+    .brand-logo {
+        width: var(--logo-width-desktop); /* 200px */
+    }
+    
+    /* 确保桌面端字体为标准尺寸 */
+    body {
+        font-size: var(--font-size-base); /* 16px */
+    }
+    
+    h1, .h1 {
+        font-size: var(--font-size-xxxl); /* 28px */
+    }
+    
+    h2, .h2 {
+        font-size: var(--font-size-xxl); /* 24px */
+    }
+}
+
+/* 超大屏设备 - 最小宽度 1200px */
+@media (min-width: 1200px) {
+    .container-fluid {
+        max-width: 1140px;
+        margin: 0 auto;
+    }
+    
+    /* 更大的Logo用于超大屏 */
+    .navbar-brand img,
+    .logo,
+    .brand-logo {
+        width: 220px;
+    }
+}
+
+/* ==================== 打印样式 ==================== */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    .card {
+        box-shadow: none !important;
+        border: 1px solid #ddd !important;
+    }
+    
+    .btn {
+        border: 1px solid #ddd !important;
+    }
+    
+    /* 打印时使用更小的字体 */
+    body {
+        font-size: 12px;
+        line-height: 1.4;
+    }
+    
+    h1, .h1 { font-size: 18px; }
+    h2, .h2 { font-size: 16px; }
+    h3, .h3 { font-size: 14px; }
+}
+
+/* 强制刷新浏览器缓存 - 版本: v3.2 - 使用!important强制应用样式 */
+
+/* ==================== 详情页面统一样式 ==================== */
+
+/* 详情页面容器 */
+.detail-page-container {
+    background: white;
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+
+/* 详情页面标签栏 */
+.detail-tabs .nav-tabs {
+    background-color: var(--light-color);
+    border-bottom: 1px solid var(--border-color);
+    margin: 0;
+    padding: 0 var(--spacing-md);
+}
+
+.detail-tabs .nav-tabs .nav-link {
+    color: var(--text-secondary);
+    border: none;
+    border-radius: 0;
+    padding: var(--spacing-md) var(--spacing-lg);
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.detail-tabs .nav-tabs .nav-link:hover {
+    color: var(--primary-color);
+    background-color: rgba(13, 110, 253, 0.1);
+}
+
+.detail-tabs .nav-tabs .nav-link.active {
+    color: var(--primary-color);
+    background-color: white;
+    border-bottom: 2px solid var(--primary-color);
+    font-weight: 600;
+}
+
+/* 详情内容区域 */
+.detail-content {
+    padding: var(--spacing-lg);
+}
+
+.detail-content h4 {
+    color: var(--text-primary);
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+    margin-bottom: var(--spacing-sm);
+}
+
+.detail-content .text-muted {
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+/* 详情信息行 */
+.detail-info-row {
+    margin-bottom: var(--spacing-lg);
+}
+
+.detail-info-row p {
+    margin-bottom: var(--spacing-sm);
+    font-size: var(--font-size-base);
+}
+
+.detail-info-row strong {
+    color: var(--text-secondary);
+    font-weight: 500;
+    margin-right: var(--spacing-xs);
+}
+
+/* 详情内容区块 */
+.detail-content-block {
+    background-color: var(--light-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    max-height: 200px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+}
+
+/* 详情底部操作区 */
+.detail-actions {
+    border-top: 1px solid var(--border-color);
+    padding-top: var(--spacing-md);
+    margin-top: var(--spacing-lg);
+}
+
+/* 表单统一样式 */
+.detail-form .form-label {
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.detail-form .form-control,
+.detail-form .form-select {
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: var(--font-size-base);
+    transition: border-color 0.2s ease;
+}
+
+.detail-form .form-control:focus,
+.detail-form .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+/* 徽章统一样式 */
+.detail-badge {
+    font-size: var(--font-size-sm);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--border-radius-sm);
+}
+
+/* 侧边栏活动状态样式增强 */
+.dropdown-item.active {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.dropdown-item.active i {
+    color: white;
+}
+
+/* ==================== 职位编辑页面特定样式 ==================== */
+
+/* 模态框内容优化 */
+.modal-xl .detail-content {
+    padding: var(--spacing-lg) var(--spacing-md);
+}
+
+/* 手风琴样式优化 */
+.accordion-item {
+    border: 1px solid var(--border-color);
+    margin-bottom: var(--spacing-sm);
+    border-radius: var(--border-radius-md);
+    overflow: hidden;
+}
+
+.accordion-button {
+    background-color: var(--light-color);
+    border: none;
+    font-weight: 500;
+    padding: var(--spacing-md) var(--spacing-lg);
+}
+
+.accordion-button:not(.collapsed) {
+    background-color: var(--primary-color);
+    color: white;
+    box-shadow: none;
+}
+
+.accordion-button:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.accordion-body {
+    background-color: white;
+    padding: var(--spacing-lg);
+}
+
+/* 表单提示文字样式 */
+.form-text {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    margin-top: var(--spacing-xs);
+}
+
+/* 大按钮样式 */
+.btn-lg {
+    padding: var(--spacing-md) var(--spacing-xl);
+    font-size: var(--font-size-base);
+    font-weight: 500;
+}
+
+/* 状态提醒框优化 */
+.alert {
+    border: none;
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-md) var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+}
+
+.alert i {
+    margin-right: var(--spacing-xs);
+}
+
+/* 表格样式优化 */
+.table-hover tbody tr:hover {
+    background-color: rgba(13, 110, 253, 0.05);
+}
+
+.table thead th {
+    border-bottom: 2px solid var(--border-color);
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.table thead th i {
+    margin-right: var(--spacing-xs);
+    color: var(--primary-color);
+}
+
+/* 文件上传区域样式 */
+input[type="file"]:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+/* ==================== Offcanvas 面板中的详情页面样式 ==================== */
+
+/* Offcanvas 容器优化 - 强制应用 */
+.offcanvas-body {
+    padding: 0 !important;
+}
+
+.offcanvas-body .detail-page-container {
+    box-shadow: none;
+    border-radius: 0;
+    height: 100%;
+}
+
+.offcanvas-body .detail-tabs .nav-tabs {
+    background-color: var(--light-color);
+    border-bottom: 1px solid var(--border-color);
+    margin: 0;
+    padding: 0 var(--spacing-md);
+    border-radius: 0;
+}
+
+.offcanvas-body .detail-content {
+    padding: var(--spacing-md);
+}
+
+/* Offcanvas 中的表单优化 - 强制应用 */
+.offcanvas-body .detail-form .form-control,
+.offcanvas-body .detail-form .form-select,
+.offcanvas-body .detail-form textarea {
+    font-size: 14px !important;
+    padding: var(--spacing-sm) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: var(--border-radius-md) !important;
+}
+
+.offcanvas-body .detail-form .form-label {
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: var(--text-secondary) !important;
+    margin-bottom: var(--spacing-xs) !important;
+}
+
+.offcanvas-body .detail-info-row p {
+    font-size: 14px;
+    margin-bottom: var(--spacing-sm);
+}
+
+.offcanvas-body .detail-content-block {
+    font-size: 13px;
+    max-height: 150px;
+    padding: var(--spacing-sm);
+}
+
+/* Offcanvas 中的按钮优化 */
+.offcanvas-body .detail-actions {
+    padding: var(--spacing-md);
+    margin-top: var(--spacing-md);
+    border-top: 1px solid var(--border-color);
+    background-color: var(--light-color);
+}
+
+.offcanvas-body .btn {
+    font-size: 14px;
+    padding: var(--spacing-sm) var(--spacing-md);
+}
+
+/* Offcanvas 标题优化 */
+.offcanvas-body h4 {
+    font-size: 18px;
+    margin-bottom: var(--spacing-sm);
+}
+
+.offcanvas-body h6 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-sm);
+    margin-top: var(--spacing-md);
+}

@@ -1,0 +1,183 @@
+{% csrf_token %}
+<div class="alert alert-info">
+    <i class="bi bi-check-circle-fill"></i>
+    读取成功！共识别出 <strong>{{ total_items_to_parse }}</strong> 条待解析内容。
+    {% if enabled_models %}
+        请检查下方文本，并选择一个AI模型。
+    {% else %}
+        <span class="text-danger">但您尚未配置任何可用的AI模型。</span>
+    {% endif %}
+</div>
+
+<!-- 调试信息 -->
+<div class="alert alert-warning">
+    <strong>调试信息:</strong>
+    <br>启用模型数量: {{ enabled_models|length }}
+    <br>当前用户: {{ user.username }}
+    <br>内容类型: {{ content_type }}
+</div>
+
+<form id="parse-text-form"
+      hx-post="{% if content_type == 'job' %}{% url 'jobs:parse_jobs' %}{% else %}{% url 'jobs:parse_candidates' %}{% endif %}"
+      hx-target="#parse-results-container"
+      hx-swap="innerHTML"
+      hx-indicator=".htmx-indicator">
+    {% csrf_token %}
+    <div class="mb-3">
+        <textarea name="text_content" class="form-control" rows="8">{{ full_text }}</textarea>
+    </div>
+    <div class="row align-items-end">
+        <div class="col-md-6">
+            <label for="model_provider" class="form-label"><strong>选择解析模型</strong></label>
+            {% if not enabled_models %}
+                <select name="model_provider" id="model_provider" class="form-select" disabled>
+                    <option value="">请先在"API密钥管理"页面添加密钥</option>
+                </select>
+            {% else %}
+                <select name="model_provider" id="model_provider" class="form-select" required>
+                    {% for key, model in enabled_models.items %}
+                        <option value="{{ key }}" 
+                                data-description="{{ model.description|default:'暂无描述' }}"
+                                data-context="{{ model.features.context_length|default:'标准' }}"
+                                data-scenario="{{ model.features.suitable_for|default:'通用场景' }}"
+                                {% if key == 'qwen_plus' %}selected{% endif %}>
+                            {{ model.name }}
+                            {% if model.features.context_length %} ({{ model.features.context_length }}){% endif %}
+                        </option>
+                    {% endfor %}
+                </select>
+                
+                <!-- 模型信息显示 -->
+                <div id="model-info" class="mt-2 p-2 bg-light rounded" style="border-left: 4px solid #007bff;">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <small class="text-muted">
+                                <strong>当前选择:</strong> <span id="current-model">正在加载...</span>
+                            </small>
+                        </div>
+                    </div>
+                    <div class="row mt-1">
+                        <div class="col-md-12">
+                            <small class="text-muted">
+                                <strong>模型描述:</strong> <span id="model-description">暂无描述</span>
+                            </small>
+                        </div>
+                    </div>
+                    <div class="row mt-1">
+                        <div class="col-md-6">
+                            <small class="text-muted">
+                                <strong>上下文:</strong> <span id="model-context">标准</span>
+                            </small>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted">
+                                <strong>适用场景:</strong> <span id="model-scenario">通用场景</span>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+        <div class="col-md-6 text-md-end mt-3 mt-md-0">
+            <button type="submit" class="btn btn-success" {% if not enabled_models %}disabled{% endif %}>
+                <span class="htmx-indicator spinner-border spinner-border-sm me-2"></span>
+                开始AI解析
+            </button>
+        </div>
+    </div>
+</form>
+
+<!-- AI解析结果容器 -->
+<div id="parse-results-container" class="mt-4">
+    <!-- HTMX将在这里加载解析结果 -->
+</div>
+
+<!-- 调试结果容器 -->
+<div id="debug-info" class="mt-3">
+    <h5>调试信息:</h5>
+    <ul id="debug-list">
+        <li>页面已加载</li>
+    </ul>
+</div>
+
+<script>
+// 调试脚本
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔧 调试模式激活');
+    
+    const form = document.getElementById('parse-text-form');
+    const debugList = document.getElementById('debug-list');
+    const modelSelect = document.getElementById('model_provider');
+    const currentModel = document.getElementById('current-model');
+    
+    function addDebugInfo(message) {
+        const li = document.createElement('li');
+        li.textContent = new Date().toLocaleTimeString() + ': ' + message;
+        debugList.appendChild(li);
+        console.log('🔧 ' + message);
+    }
+    
+    if (form) {
+        addDebugInfo('表单元素找到');
+        
+        // 监听表单提交
+        form.addEventListener('submit', function(e) {
+            addDebugInfo('表单提交事件触发');
+            console.log('表单数据:', new FormData(form));
+        });
+        
+        // 监听HTMX事件
+        form.addEventListener('htmx:beforeRequest', function(e) {
+            addDebugInfo('HTMX请求开始');
+        });
+        
+        form.addEventListener('htmx:afterRequest', function(e) {
+            addDebugInfo('HTMX请求完成，状态: ' + e.detail.xhr.status);
+        });
+        
+        form.addEventListener('htmx:responseError', function(e) {
+            addDebugInfo('HTMX响应错误: ' + e.detail.xhr.status);
+        });
+        
+    } else {
+        addDebugInfo('❌ 表单元素未找到');
+    }
+    
+    // 监听模型选择变化
+    if (modelSelect && currentModel) {
+        const modelDescription = document.getElementById('model-description');
+        const modelContext = document.getElementById('model-context');
+        const modelScenario = document.getElementById('model-scenario');
+        
+        function updateModelInfo() {
+            const selectedOption = modelSelect.options[modelSelect.selectedIndex];
+            if (selectedOption && selectedOption.value) {
+                // 更新当前选择
+                currentModel.textContent = selectedOption.text;
+                
+                // 更新详细信息
+                const description = selectedOption.getAttribute('data-description') || '暂无描述';
+                const context = selectedOption.getAttribute('data-context') || '标准';
+                const scenario = selectedOption.getAttribute('data-scenario') || '通用场景';
+                
+                if (modelDescription) modelDescription.textContent = description;
+                if (modelContext) modelContext.textContent = context;
+                if (modelScenario) modelScenario.textContent = scenario;
+                
+                addDebugInfo('模型选择变更为: ' + selectedOption.value + ' (' + selectedOption.text + ')');
+                addDebugInfo('模型描述: ' + description);
+            }
+        }
+        
+        updateModelInfo();
+        modelSelect.addEventListener('change', updateModelInfo);
+    }
+    
+    // 检查HTMX是否加载
+    if (typeof htmx !== 'undefined') {
+        addDebugInfo('✅ HTMX已加载');
+    } else {
+        addDebugInfo('❌ HTMX未加载');
+    }
+});
+</script>

@@ -1,0 +1,389 @@
+"""
+Enhanced AI Model Configurations
+
+This file contains the centralized model registry configuration that replaces
+the legacy AI_MODELS setting with a more comprehensive structure.
+"""
+
+# AI Configuration Settings
+AI_MODEL_CONFIGS = {
+    'qwen_plus': {
+        'name': '通义千问-Plus (推荐)',
+        'provider': 'qwen',
+        'model_name': 'qwen-plus',
+        'base_url': 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+        'max_context_tokens': 32768,
+        'supports_json_mode': True,
+        'supports_streaming': True,
+        'supports_function_calling': True,
+        'rate_limits': {
+            'requests_per_minute': 60,
+            'tokens_per_minute': 100000,
+            'requests_per_day': 1000,
+            'concurrent_requests': 5
+        },
+        'default_temperature': 0.1,
+        'timeout_seconds': 60,
+        'adapter_class': 'QwenAdapter',
+        'cost_per_1k_input_tokens': 0.008,
+        'cost_per_1k_output_tokens': 0.02,
+        'description': '阿里云通义千问Plus模型，平衡性能和成本的推荐选择',
+        'tags': ['recommended', 'balanced', 'chinese'],
+        'is_active': True,
+        'is_deprecated': False
+    },
+    
+    'qwen_turbo': {
+        'name': '通义千问-Turbo (高速)',
+        'provider': 'qwen',
+        'model_name': 'qwen-turbo',
+        'base_url': 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+        'max_context_tokens': 8192,
+        'supports_json_mode': True,
+        'supports_streaming': True,
+        'rate_limits': {
+            'requests_per_minute': 120,
+            'tokens_per_minute': 200000,
+            'requests_per_day': 2000,
+            'concurrent_requests': 10
+        },
+        'default_temperature': 0.1,
+        'timeout_seconds': 30,
+        'adapter_class': 'QwenAdapter',
+        'cost_per_1k_input_tokens': 0.003,
+        'cost_per_1k_output_tokens': 0.006,
+        'description': '快速响应的通义千问模型，适合简单任务',
+        'tags': ['fast', 'cost-effective', 'chinese'],
+        'is_active': True,
+        'is_deprecated': False
+    },
+    
+    'qwen_max': {
+        'name': '通义千问-Max (长文本)',
+        'provider': 'qwen',
+        'model_name': 'qwen-max',
+        'base_url': 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+        'max_context_tokens': 8192,
+        'supports_json_mode': True,
+        'supports_streaming': True,
+        'supports_function_calling': True,
+        'rate_limits': {
+            'requests_per_minute': 30,
+            'tokens_per_minute': 50000,
+            'requests_per_day': 500,
+            'concurrent_requests': 3
+        },
+        'default_temperature': 0.1,
+        'timeout_seconds': 120,
+        'adapter_class': 'QwenAdapter',
+        'cost_per_1k_input_tokens': 0.02,
+        'cost_per_1k_output_tokens': 0.06,
+        'description': '通义千问最强模型，适合复杂推理任务',
+        'tags': ['premium', 'complex-reasoning', 'chinese'],
+        'is_active': True,
+        'is_deprecated': False
+    },
+    
+    'kimi_32k': {
+        'name': 'Kimi (32K上下文)',
+        'provider': 'kimi',
+        'model_name': 'moonshot-v1-32k',
+        'base_url': 'https://api.moonshot.cn/v1',
+        'max_context_tokens': 32768,
+        'supports_json_mode': False,
+        'supports_streaming': True,
+        'rate_limits': {
+            'requests_per_minute': 60,
+            'tokens_per_minute': 80000,
+            'requests_per_day': 1000,
+            'concurrent_requests': 5
+        },
+        'default_temperature': 0.1,
+        'timeout_seconds': 90,
+        'adapter_class': 'KimiAdapter',
+        'cost_per_1k_input_tokens': 0.012,
+        'cost_per_1k_output_tokens': 0.012,
+        'description': '月之暗面Kimi模型，支持32K上下文，适合长文档处理',
+        'tags': ['long-context', 'document-processing', 'chinese'],
+        'is_active': True,
+        'is_deprecated': False
+    },
+    
+    'kimi_128k': {
+        'name': 'Kimi (128K上下文)',
+        'provider': 'kimi',
+        'model_name': 'moonshot-v1-128k',
+        'base_url': 'https://api.moonshot.cn/v1',
+        'max_context_tokens': 131072,
+        'supports_json_mode': True,
+        'supports_streaming': True,
+        'rate_limits': {
+            'requests_per_minute': 30,
+            'tokens_per_minute': 50000,
+            'requests_per_day': 500,
+            'concurrent_requests': 3
+        },
+        'default_temperature': 0.1,
+        'timeout_seconds': 180,
+        'adapter_class': 'KimiAdapter',
+        'cost_per_1k_input_tokens': 0.024,
+        'cost_per_1k_output_tokens': 0.024,
+        'description': '超长上下文Kimi模型，支持128K token，适合大文档分析',
+        'tags': ['ultra-long-context', 'document-analysis', 'chinese'],
+        'is_active': True,
+        'is_deprecated': False
+    },
+    
+    'doubao_pro_32k': {
+        'name': '豆包-Pro (32K)',
+        'provider': 'doubao',
+        'model_name': 'doubao-pro-32k',
+        'base_url': 'https://ark.cn-beijing.volces.com/api/v3',
+        'max_context_tokens': 32768,
+        'supports_json_mode': True,
+        'supports_streaming': True,
+        'rate_limits': {
+            'requests_per_minute': 50,
+            'tokens_per_minute': 70000,
+            'requests_per_day': 800,
+            'concurrent_requests': 4
+        },
+        'default_temperature': 0.1,
+        'timeout_seconds': 90,
+        'adapter_class': 'DoubaoAdapter',
+        'cost_per_1k_input_tokens': 0.008,
+        'cost_per_1k_output_tokens': 0.016,
+        'description': '字节跳动豆包Pro模型，32K上下文支持',
+        'tags': ['bytedance', 'chinese', 'balanced'],
+        'is_active': True,
+        'is_deprecated': False
+    },
+    
+    'doubao_pro_128k': {
+        'name': '豆包-Pro (128K)',
+        'provider': 'doubao',
+        'model_name': 'doubao-pro-128k',
+        'base_url': 'https://ark.cn-beijing.volces.com/api/v3',
+        'max_context_tokens': 131072,
+        'supports_json_mode': True,
+        'supports_streaming': True,
+        'rate_limits': {
+            'requests_per_minute': 30,
+            'tokens_per_minute': 40000,
+            'requests_per_day': 400,
+            'concurrent_requests': 2
+        },
+        'default_temperature': 0.1,
+        'timeout_seconds': 180,
+        'adapter_class': 'DoubaoAdapter',
+        'cost_per_1k_input_tokens': 0.02,
+        'cost_per_1k_output_tokens': 0.04,
+        'description': '豆包Pro长文本模型，支持128K上下文',
+        'tags': ['bytedance', 'long-context', 'chinese'],
+        'is_active': True,
+        'is_deprecated': False
+    },
+    
+    'hunyuan_pro': {
+        'name': '腾讯混元-Pro',
+        'provider': 'hunyuan',
+        'model_name': 'hunyuan-pro',
+        'base_url': 'https://hunyuan.cloud.tencent.com/openapi/v1',
+        'max_context_tokens': 32768,
+        'supports_json_mode': False,
+        'supports_streaming': True,
+        'rate_limits': {
+            'requests_per_minute': 40,
+            'tokens_per_minute': 60000,
+            'requests_per_day': 600,
+            'concurrent_requests': 3
+        },
+        'default_temperature': 0.1,
+        'timeout_seconds': 90,
+        'adapter_class': 'HunyuanAdapter',
+        'cost_per_1k_input_tokens': 0.01,
+        'cost_per_1k_output_tokens': 0.03,
+        'description': '腾讯混元Pro模型，企业级AI服务',
+        'tags': ['tencent', 'enterprise', 'chinese'],
+        'is_active': True,
+        'is_deprecated': False
+    },
+    
+    'chatglm_4': {
+        'name': 'ChatGLM-4',
+        'provider': 'chatglm',
+        'model_name': 'glm-4',
+        'base_url': 'https://open.bigmodel.cn/api/paas/v4',
+        'max_context_tokens': 128000,
+        'supports_json_mode': True,
+        'supports_streaming': True,
+        'supports_function_calling': True,
+        'rate_limits': {
+            'requests_per_minute': 50,
+            'tokens_per_minute': 75000,
+            'requests_per_day': 1000,
+            'concurrent_requests': 5
+        },
+        'default_temperature': 0.1,
+        'timeout_seconds': 120,
+        'adapter_class': 'ChatGLMAdapter',
+        'cost_per_1k_input_tokens': 0.01,
+        'cost_per_1k_output_tokens': 0.02,
+        'description': '智谱AI ChatGLM-4模型，支持多模态和函数调用',
+        'tags': ['zhipu', 'multimodal', 'function-calling', 'chinese'],
+        'is_active': True,
+        'is_deprecated': False
+    },
+    
+    'deepseek_chat': {
+        'name': '深度求索-V2 (通用)',
+        'provider': 'deepseek',
+        'model_name': 'deepseek-chat',
+        'base_url': 'https://api.deepseek.com/v1',
+        'max_context_tokens': 32768,
+        'supports_json_mode': True,
+        'supports_streaming': True,
+        'rate_limits': {
+            'requests_per_minute': 60,
+            'tokens_per_minute': 100000,
+            'requests_per_day': 1200,
+            'concurrent_requests': 6
+        },
+        'default_temperature': 0.1,
+        'timeout_seconds': 60,
+        'adapter_class': 'DeepSeekAdapter',
+        'cost_per_1k_input_tokens': 0.001,
+        'cost_per_1k_output_tokens': 0.002,
+        'description': '深度求索通用对话模型，性价比极高',
+        'tags': ['deepseek', 'cost-effective', 'general', 'chinese'],
+        'is_active': True,
+        'is_deprecated': False
+    },
+    
+    'deepseek_coder': {
+        'name': '深度求索-Coder (代码)',
+        'provider': 'deepseek',
+        'model_name': 'deepseek-coder',
+        'base_url': 'https://api.deepseek.com/v1',
+        'max_context_tokens': 16384,
+        'supports_json_mode': True,
+        'supports_streaming': True,
+        'rate_limits': {
+            'requests_per_minute': 60,
+            'tokens_per_minute': 80000,
+            'requests_per_day': 1200,
+            'concurrent_requests': 6
+        },
+        'default_temperature': 0.1,
+        'timeout_seconds': 60,
+        'adapter_class': 'DeepSeekAdapter',
+        'cost_per_1k_input_tokens': 0.001,
+        'cost_per_1k_output_tokens': 0.002,
+        'description': '深度求索代码专用模型，代码生成和理解能力强',
+        'tags': ['deepseek', 'coding', 'cost-effective', 'chinese'],
+        'is_active': True,
+        'is_deprecated': False
+    },
+    
+    'minimax_abab6_5': {
+        'name': 'MiniMax (abab6.5)',
+        'provider': 'minimax',
+        'model_name': 'abab6.5-chat',
+        'base_url': 'https://api.minimax.chat/v1/text/chatcompletion-pro',
+        'max_context_tokens': 245760,
+        'supports_json_mode': True,
+        'supports_streaming': True,
+        'rate_limits': {
+            'requests_per_minute': 20,
+            'tokens_per_minute': 30000,
+            'requests_per_day': 300,
+            'concurrent_requests': 2
+        },
+        'default_temperature': 0.1,
+        'timeout_seconds': 240,
+        'adapter_class': 'MiniMaxAdapter',
+        'cost_per_1k_input_tokens': 0.015,
+        'cost_per_1k_output_tokens': 0.03,
+        'description': 'MiniMax超长文本模型，支持24万token上下文',
+        'tags': ['minimax', 'ultra-long-context', 'chinese'],
+        'is_active': True,
+        'is_deprecated': False
+    },
+    
+    'together_mixtral': {
+        'name': 'Together AI (Mixtral-8x22B)',
+        'provider': 'together',
+        'model_name': 'mistralai/Mixtral-8x22B-Instruct-v0.1',
+        'base_url': 'https://api.together.xyz/v1',
+        'max_context_tokens': 65536,
+        'supports_json_mode': True,
+        'supports_streaming': True,
+        'rate_limits': {
+            'requests_per_minute': 30,
+            'tokens_per_minute': 50000,
+            'requests_per_day': 500,
+            'concurrent_requests': 3
+        },
+        'default_temperature': 0.1,
+        'timeout_seconds': 120,
+        'adapter_class': 'TogetherAdapter',
+        'cost_per_1k_input_tokens': 0.0009,
+        'cost_per_1k_output_tokens': 0.0009,
+        'description': 'Together AI提供的Mixtral大型语言模型',
+        'tags': ['together', 'open-source', 'multilingual', 'english'],
+        'is_active': True,
+        'is_deprecated': False
+    },
+    
+    'together_llama3_1_70b': {
+        'name': 'Together AI (Llama3.1-70B)',
+        'provider': 'together',
+        'model_name': 'meta-llama/Llama-3.1-70B-Instruct',
+        'base_url': 'https://api.together.xyz/v1',
+        'max_context_tokens': 131072,
+        'supports_json_mode': True,
+        'supports_streaming': True,
+        'rate_limits': {
+            'requests_per_minute': 30,
+            'tokens_per_minute': 40000,
+            'requests_per_day': 500,
+            'concurrent_requests': 3
+        },
+        'default_temperature': 0.1,
+        'timeout_seconds': 150,
+        'adapter_class': 'TogetherAdapter',
+        'cost_per_1k_input_tokens': 0.0009,
+        'cost_per_1k_output_tokens': 0.0009,
+        'description': 'Meta Llama 3.1 70B模型，开源大模型的优秀选择',
+        'tags': ['together', 'meta', 'open-source', 'long-context', 'english'],
+        'is_active': True,
+        'is_deprecated': False
+    }
+}
+
+# Default User Preferences
+AI_DEFAULT_MODEL = 'qwen_plus'
+AI_DEFAULT_FALLBACK_MODELS = ['qwen_plus', 'qwen_turbo', 'kimi_32k', 'deepseek_chat']
+AI_DEFAULT_MAX_RETRIES = 3
+AI_DEFAULT_MAX_TOKENS = None
+AI_DEFAULT_TEMPERATURE = 0.1
+AI_DEFAULT_TIMEOUT = 90
+
+# Cache Configuration
+AI_CONFIG_CACHE_TIMEOUT = 300  # 5 minutes
+
+# Rate Limiting Configuration
+AI_ENABLE_RATE_LIMITING = True
+AI_RATE_LIMIT_BACKEND = 'django_ratelimit'
+
+# Legacy Support - for backward compatibility
+# This maintains the old AI_MODELS format for existing code
+AI_MODELS = {
+    model_id: {
+        'name': config['name'],
+        'provider': config['provider'],
+        'base_url': config['base_url'],
+        'model_name': config['model_name']
+    }
+    for model_id, config in AI_MODEL_CONFIGS.items()
+}

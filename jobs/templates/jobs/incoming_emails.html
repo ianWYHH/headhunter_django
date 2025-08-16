@@ -1,0 +1,509 @@
+{% extends 'jobs/base.html' %}
+{% load static %}
+{% csrf_token %}
+
+{% block title %}收件管理{% endblock %}
+
+{% block page_title %}收件管理{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 统计信息和操作按钮 -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="stats-grid">
+                <div class="stats-card bg-primary">
+                    <div class="stats-number">{{ total_emails }}</div>
+                    <div class="stats-label">总邮件数</div>
+                </div>
+                <div class="stats-card bg-warning">
+                    <div class="stats-number">{{ unread_count }}</div>
+                    <div class="stats-label">未读邮件</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 d-flex align-items-center justify-content-end">
+            <div class="page-actions">
+                <button type="button" class="btn btn-success" onclick="fetchEmails()">
+                    <i class="fas fa-download"></i> 收取邮件
+                </button>
+                <button type="button" class="btn btn-outline-primary" onclick="markAllAsRead()">
+                    <i class="fas fa-check-double"></i> 全部标记已读
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 筛选表单 -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="card-title mb-0">
+                <i class="fas fa-filter"></i> 筛选条件
+            </h6>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="{{ form.received_account.id_for_label }}" class="form-label">
+                        {{ form.received_account.label }}
+                    </label>
+                    {{ form.received_account }}
+                </div>
+                <div class="col-md-3">
+                    <label for="{{ form.candidate.id_for_label }}" class="form-label">
+                        {{ form.candidate.label }}
+                    </label>
+                    {{ form.candidate }}
+                </div>
+                <div class="col-md-2">
+                    <label for="{{ form.email_type.id_for_label }}" class="form-label">
+                        {{ form.email_type.label }}
+                    </label>
+                    {{ form.email_type }}
+                </div>
+                <div class="col-md-2">
+                    <label for="{{ form.is_read.id_for_label }}" class="form-label">
+                        {{ form.is_read.label }}
+                    </label>
+                    {{ form.is_read }}
+                </div>
+                <div class="col-md-2">
+                    <div class="d-grid">
+                        <label class="form-label">&nbsp;</label>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i> 筛选
+                        </button>
+                    </div>
+                </div>
+            </form>
+            
+            <!-- 日期筛选 -->
+            <form method="get" class="row g-3 mt-2">
+                {% for field in form.hidden_fields %}{{ field }}{% endfor %}
+                <div class="col-md-3">
+                    <label for="{{ form.date_from.id_for_label }}" class="form-label">
+                        {{ form.date_from.label }}
+                    </label>
+                    {{ form.date_from }}
+                </div>
+                <div class="col-md-3">
+                    <label for="{{ form.date_to.id_for_label }}" class="form-label">
+                        {{ form.date_to.label }}
+                    </label>
+                    {{ form.date_to }}
+                </div>
+                <div class="col-md-2">
+                    <div class="d-grid">
+                        <label class="form-label">&nbsp;</label>
+                        <button type="submit" class="btn btn-outline-primary">
+                            <i class="fas fa-calendar"></i> 时间筛选
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="d-grid">
+                        <label class="form-label">&nbsp;</label>
+                        <a href="{% url 'jobs:incoming_emails' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> 清除筛选
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 邮件列表 -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h6 class="card-title mb-0">
+                <i class="fas fa-list"></i> 收件列表
+            </h6>
+            {% if page_obj %}
+                <small class="text-muted">
+                    显示第 {{ page_obj.start_index }}-{{ page_obj.end_index }} 项，共 {{ page_obj.paginator.count }} 项
+                </small>
+            {% endif %}
+        </div>
+        <div class="card-body p-0">
+            {% if page_obj %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="col-checkbox">
+                                    <input type="checkbox" id="select-all" class="form-check-input">
+                                </th>
+                                <th class="col-email-status">状态</th>
+                                <th class="col-sender">发件人</th>
+                                <th class="col-subject">主题</th>
+                                <th class="col-email-type">类型</th>
+                                <th class="col-time">接收时间</th>
+                                <th class="col-actions">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for email in page_obj %}
+                            <tr class="{% if not email.is_read %}table-warning{% endif %}">
+                                <td>
+                                    <input type="checkbox" name="email_ids" value="{{ email.id }}" class="form-check-input email-checkbox">
+                                </td>
+                                <td class="text-truncate-table">
+                                    {% if not email.is_read %}
+                                        <span class="badge bg-warning">
+                                            <i class="fas fa-envelope"></i> 未读
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-envelope-open"></i> 已读
+                                        </span>
+                                    {% endif %}
+                                    {% if email.is_important %}
+                                        <br><span class="badge bg-danger mt-1">
+                                            <i class="fas fa-star"></i> 重要
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-truncate-table" title="{{ email.sender_name|default:email.sender_email }}{% if email.sender_name %} ({{ email.sender_email }}){% endif %}{% if email.candidate %} - {{ email.candidate.name }}{% endif %}">
+                                    <div>
+                                        <strong>{{ email.sender_name|default:email.sender_email }}</strong>
+                                        {% if email.sender_name %}
+                                            <br><small class="text-muted">{{ email.sender_email }}</small>
+                                        {% endif %}
+                                    </div>
+                                    {% if email.candidate %}
+                                        <br><small class="text-info">
+                                            <i class="fas fa-user"></i> {{ email.candidate.name }}
+                                        </small>
+                                    {% endif %}
+                                </td>
+                                <td class="text-truncate-table" title="{{ email.subject }}">
+                                    <div class="email-subject">
+                                        <a href="{% url 'jobs:incoming_email_detail' email.id %}" 
+                                           class="text-decoration-none">
+                                            {{ email.subject }}
+                                        </a>
+                                    </div>
+                                    <small class="text-muted">
+                                        {{ email.content|truncatechars:100 }}
+                                    </small>
+                                    {% if email.attachments_count > 0 %}
+                                        <br><small class="text-warning">
+                                            <i class="fas fa-paperclip"></i> {{ email.attachments_count }} 个附件
+                                        </small>
+                                    {% endif %}
+                                </td>
+                                <td class="text-truncate-table" title="{{ email.get_email_type_display }}">
+                                    <span class="badge bg-info">{{ email.get_email_type_display }}</span>
+                                </td>
+                                <td class="text-truncate-table" title="{{ email.received_at|date:'Y-m-d H:i' }}">
+                                    <small>{{ email.received_at|date:"m-d H:i" }}</small>
+                                    <br><small class="text-muted">{{ email.received_at|timesince }}前</small>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{% url 'jobs:incoming_email_detail' email.id %}" 
+                                           class="btn btn-outline-primary btn-sm" title="查看详情">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {% if not email.is_read %}
+                                            <button type="button" onclick="markAsRead({{ email.id }})" 
+                                                    class="btn btn-outline-success btn-sm" title="标记已读">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                        {% endif %}
+                                        <button type="button" onclick="toggleImportant({{ email.id }})" 
+                                                class="btn btn-outline-warning btn-sm" title="切换重要">
+                                            <i class="fas fa-star"></i>
+                                        </button>
+                                        <button type="button" onclick="deleteEmail({{ email.id }})" 
+                                                class="btn btn-outline-danger btn-sm" title="删除">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center py-5">
+                                    <div class="text-muted">
+                                        <i class="fas fa-inbox fa-3x mb-3"></i>
+                                        <h5>暂无收件邮件</h5>
+                                        <p>点击上方的"收取邮件"按钮来同步最新邮件</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 分页 -->
+                {% if page_obj.paginator.num_pages > 1 %}
+                    {% include 'jobs/partials/pagination.html' %}
+                {% endif %}
+            {% else %}
+                <div class="text-center py-5">
+                    <div class="text-muted">
+                        <i class="fas fa-inbox fa-3x mb-3"></i>
+                        <h5>暂无收件邮件</h5>
+                        <p>点击上方的"收取邮件"按钮来同步最新邮件</p>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 批量操作工具栏 -->
+    <div class="fixed-bottom bg-light border-top p-3" id="batch-toolbar" style="display: none;">
+        <div class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <span id="selected-count">0</span> 个邮件已选择
+                </div>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-success" onclick="batchMarkAsRead()">
+                        <i class="fas fa-check"></i> 标记已读
+                    </button>
+                    <button type="button" class="btn btn-warning" onclick="batchToggleImportant()">
+                        <i class="fas fa-star"></i> 切换重要
+                    </button>
+                    <button type="button" class="btn btn-danger" onclick="batchDelete()">
+                        <i class="fas fa-trash"></i> 批量删除
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="clearSelection()">
+                        <i class="fas fa-times"></i> 取消选择
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 全选/取消全选
+    const selectAllCheckbox = document.getElementById('select-all');
+    const emailCheckboxes = document.querySelectorAll('.email-checkbox');
+    const batchToolbar = document.getElementById('batch-toolbar');
+    const selectedCountSpan = document.getElementById('selected-count');
+
+    selectAllCheckbox?.addEventListener('change', function() {
+        emailCheckboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
+        updateBatchToolbar();
+    });
+
+    emailCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateBatchToolbar);
+    });
+
+    function updateBatchToolbar() {
+        const checkedBoxes = document.querySelectorAll('.email-checkbox:checked');
+        const count = checkedBoxes.length;
+        
+        if (count > 0) {
+            batchToolbar.style.display = 'block';
+            selectedCountSpan.textContent = count;
+        } else {
+            batchToolbar.style.display = 'none';
+        }
+        
+        // 更新全选状态
+        if (selectAllCheckbox) {
+            selectAllCheckbox.checked = count === emailCheckboxes.length && count > 0;
+            selectAllCheckbox.indeterminate = count > 0 && count < emailCheckboxes.length;
+        }
+    }
+
+    // 清除选择
+    window.clearSelection = function() {
+        emailCheckboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        if (selectAllCheckbox) {
+            selectAllCheckbox.checked = false;
+            selectAllCheckbox.indeterminate = false;
+        }
+        updateBatchToolbar();
+    };
+});
+
+// AJAX 操作函数
+function fetchEmails() {
+    if (confirm('确定要收取最新邮件吗？这可能需要一些时间。')) {
+        // 这里应该调用收取邮件的 API
+        window.location.href = "{% url 'jobs:fetch_emails' %}";
+    }
+}
+
+function markAsRead(emailId) {
+    // 标记单个邮件为已读
+    fetch(`/emails/${emailId}/mark-read/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function toggleImportant(emailId) {
+    // 切换重要状态
+    fetch(`/emails/${emailId}/toggle-important/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function deleteEmail(emailId) {
+    if (confirm('确定要删除这封邮件吗？')) {
+        fetch(`/emails/${emailId}/delete/`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+}
+
+function markAllAsRead() {
+    if (confirm('确定要将所有邮件标记为已读吗？')) {
+        fetch('{% url "jobs:incoming_emails_mark_all_read" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+}
+
+// 批量操作函数
+function batchMarkAsRead() {
+    const selectedIds = Array.from(document.querySelectorAll('.email-checkbox:checked')).map(cb => cb.value);
+    if (selectedIds.length === 0) return;
+    
+    fetch('{% url "jobs:incoming_emails_batch_operations" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({email_ids: selectedIds, operation: 'mark_read'})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function batchToggleImportant() {
+    const selectedIds = Array.from(document.querySelectorAll('.email-checkbox:checked')).map(cb => cb.value);
+    if (selectedIds.length === 0) return;
+    
+    fetch('{% url "jobs:incoming_emails_batch_operations" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({email_ids: selectedIds, operation: 'toggle_important'})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function batchDelete() {
+    const selectedIds = Array.from(document.querySelectorAll('.email-checkbox:checked')).map(cb => cb.value);
+    if (selectedIds.length === 0) return;
+    
+    if (confirm(`确定要删除选中的 ${selectedIds.length} 封邮件吗？`)) {
+        fetch('{% url "jobs:incoming_emails_batch_operations" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({email_ids: selectedIds, operation: 'delete'})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+}
+</script>
+
+<style>
+.email-subject {
+    font-weight: 500;
+}
+
+.table-warning {
+    background-color: rgba(255, 193, 7, 0.1) !important;
+}
+
+.fixed-bottom {
+    z-index: 1040;
+}
+
+#batch-toolbar {
+    border-top: 2px solid #007bff;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+}
+
+.form-check-input:checked {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.btn-group-sm > .btn, .btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+</style>
+{% endblock %}

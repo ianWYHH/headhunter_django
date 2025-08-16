@@ -1,0 +1,400 @@
+{% extends 'jobs/base.html' %}
+{% load static %}
+
+{% block title %}联系人邮件发送{% endblock %}
+
+{% block page_title %}联系人邮件发送{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-envelope"></i> 联系人邮件发送
+                        </h5>
+                        <a href="{% url 'jobs:contact_list' %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-arrow-left"></i> 返回联系人列表
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- 收件人选择 -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="border-bottom pb-2 mb-3">
+                                    <i class="fas fa-users"></i> 收件人选择
+                                </h6>
+                            </div>
+                            
+                            <!-- 选择联系人 -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">{{ form.contacts.label }}</label>
+                                    <div class="contact-selection-box">
+                                        <div class="search-box mb-2">
+                                            <input type="text" id="contact-search" class="form-control form-control-sm" 
+                                                   placeholder="搜索联系人...">
+                                        </div>
+                                        <div class="contacts-list" style="max-height: 200px; overflow-y: auto;">
+                                            {% for checkbox in form.contacts %}
+                                            <div class="contact-item" data-contact-info="{{ checkbox.choice_label|lower }}">
+                                                <div class="form-check">
+                                                    {{ checkbox.tag }}
+                                                    <label class="form-check-label" for="{{ checkbox.id_for_label }}">
+                                                        {{ checkbox.choice_label }}
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% if form.contacts.errors %}
+                                        <div class="text-danger small">{{ form.contacts.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- 选择分组 -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">{{ form.contact_groups.label }}</label>
+                                    <div class="group-selection-box">
+                                        <div class="groups-list" style="max-height: 200px; overflow-y: auto;">
+                                            {% for checkbox in form.contact_groups %}
+                                            <div class="group-item">
+                                                <div class="form-check">
+                                                    {{ checkbox.tag }}
+                                                    <label class="form-check-label" for="{{ checkbox.id_for_label }}">
+                                                        <strong>{{ checkbox.choice_label }}</strong>
+                                                        <small class="text-muted d-block">联系人分组</small>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% if form.contact_groups.errors %}
+                                        <div class="text-danger small">{{ form.contact_groups.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 邮件内容 -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="border-bottom pb-2 mb-3">
+                                    <i class="fas fa-edit"></i> 邮件内容
+                                </h6>
+                            </div>
+                            
+                            <!-- 模板选择 -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.template.id_for_label }}" class="form-label">
+                                        {{ form.template.label }}
+                                    </label>
+                                    {{ form.template }}
+                                    {% if form.template.errors %}
+                                        <div class="text-danger small">{{ form.template.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- 发件邮箱 -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.from_account.id_for_label }}" class="form-label">
+                                        {{ form.from_account.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.from_account }}
+                                    {% if form.from_account.errors %}
+                                        <div class="text-danger small">{{ form.from_account.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- 邮件主题 -->
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    <label for="{{ form.subject.id_for_label }}" class="form-label">
+                                        {{ form.subject.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.subject }}
+                                    {% if form.subject.errors %}
+                                        <div class="text-danger small">{{ form.subject.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- 邮件内容 -->
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    <label for="{{ form.content.id_for_label }}" class="form-label">
+                                        {{ form.content.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.content }}
+                                    <div class="form-text">
+                                        <strong>可用变量：</strong>
+                                        <code>{name}</code> - 联系人姓名，
+                                        <code>{email}</code> - 邮箱地址，
+                                        <code>{company}</code> - 公司名称，
+                                        <code>{position}</code> - 职位，
+                                        <code>{signature}</code> - 您的签名
+                                    </div>
+                                    {% if form.content.errors %}
+                                        <div class="text-danger small">{{ form.content.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 发送设置 -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="border-bottom pb-2 mb-3">
+                                    <i class="fas fa-cog"></i> 发送设置
+                                </h6>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    {{ form.send_immediately }}
+                                    <label class="form-check-label" for="{{ form.send_immediately.id_for_label }}">
+                                        {{ form.send_immediately.label }}
+                                        <small class="text-muted d-block">取消勾选将创建邮件任务到队列</small>
+                                    </label>
+                                    {% if form.send_immediately.errors %}
+                                        <div class="text-danger small">{{ form.send_immediately.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 表单错误提示 -->
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {{ form.non_field_errors }}
+                            </div>
+                        {% endif %}
+
+                        <!-- 提交按钮 -->
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{% url 'jobs:contact_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> 取消
+                            </a>
+                            <button type="button" class="btn btn-info" onclick="previewEmail()">
+                                <i class="fas fa-eye"></i> 预览邮件
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i> 发送邮件
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 邮件预览模态框 -->
+<div class="modal fade" id="emailPreviewModal" tabindex="-1" aria-labelledby="emailPreviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="emailPreviewModalLabel">
+                    <i class="fas fa-eye"></i> 邮件预览
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="email-preview">
+                    <div class="mb-3">
+                        <strong>主题：</strong>
+                        <span id="preview-subject"></span>
+                    </div>
+                    <div class="mb-3">
+                        <strong>收件人：</strong>
+                        <span id="preview-recipients"></span>
+                    </div>
+                    <hr>
+                    <div class="email-content" id="preview-content">
+                        <!-- 邮件内容将通过JavaScript填充 -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.contact-selection-box, .group-selection-box {
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 0.75rem;
+    background-color: #f8f9fa;
+}
+
+.contact-item, .group-item {
+    padding: 0.5rem;
+    border-bottom: 1px solid #eee;
+    transition: background-color 0.2s;
+}
+
+.contact-item:hover, .group-item:hover {
+    background-color: #e9ecef;
+}
+
+.contact-item:last-child, .group-item:last-child {
+    border-bottom: none;
+}
+
+.form-check-label {
+    width: 100%;
+    margin-bottom: 0;
+}
+
+.search-box input:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.email-preview {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 0.375rem;
+    border: 1px solid #dee2e6;
+}
+
+.email-content {
+    background-color: white;
+    padding: 1rem;
+    border-radius: 0.375rem;
+    border: 1px solid #dee2e6;
+    min-height: 200px;
+    white-space: pre-wrap;
+}
+
+.form-label {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.text-danger {
+    font-size: 0.875rem;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.border-bottom {
+    border-color: #dee2e6 !important;
+}
+
+h6 {
+    color: #495057;
+    font-weight: 600;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 联系人搜索功能
+    const searchInput = document.getElementById('contact-search');
+    const contactItems = document.querySelectorAll('.contact-item');
+    
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            
+            contactItems.forEach(function(item) {
+                const contactInfo = item.getAttribute('data-contact-info');
+                if (contactInfo.includes(searchTerm)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+    }
+    
+    // 模板选择自动填充
+    const templateSelect = document.querySelector('select[name="template"]');
+    const subjectField = document.querySelector('input[name="subject"]');
+    const contentField = document.querySelector('textarea[name="content"]');
+    
+    if (templateSelect) {
+        templateSelect.addEventListener('change', function() {
+            const templateId = this.value;
+            if (templateId) {
+                // 这里可以通过AJAX获取模板内容并填充
+                // 暂时使用静态示例
+                fetch(`/api/email-template/${templateId}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (subjectField) subjectField.value = data.subject || '';
+                        if (contentField) contentField.value = data.content || '';
+                    })
+                    .catch(error => {
+                        console.log('获取模板内容失败:', error);
+                    });
+            }
+        });
+    }
+});
+
+function previewEmail() {
+    const subject = document.querySelector('input[name="subject"]').value;
+    const content = document.querySelector('textarea[name="content"]').value;
+    
+    // 获取选中的联系人
+    const selectedContacts = [];
+    document.querySelectorAll('input[name="contacts"]:checked').forEach(function(checkbox) {
+        selectedContacts.push(checkbox.nextElementSibling.textContent.trim());
+    });
+    
+    // 获取选中的分组
+    const selectedGroups = [];
+    document.querySelectorAll('input[name="contact_groups"]:checked').forEach(function(checkbox) {
+        selectedGroups.push(checkbox.nextElementSibling.textContent.trim());
+    });
+    
+    // 填充预览内容
+    document.getElementById('preview-subject').textContent = subject || '(无主题)';
+    
+    let recipients = '';
+    if (selectedContacts.length > 0) {
+        recipients += '联系人: ' + selectedContacts.join(', ');
+    }
+    if (selectedGroups.length > 0) {
+        if (recipients) recipients += '; ';
+        recipients += '分组: ' + selectedGroups.join(', ');
+    }
+    document.getElementById('preview-recipients').textContent = recipients || '(未选择收件人)';
+    
+    // 简单的变量替换示例
+    let previewContent = content || '(无内容)';
+    previewContent = previewContent.replace(/{name}/g, '[联系人姓名]');
+    previewContent = previewContent.replace(/{email}/g, '[邮箱地址]');
+    previewContent = previewContent.replace(/{company}/g, '[公司名称]');
+    previewContent = previewContent.replace(/{position}/g, '[职位]');
+    previewContent = previewContent.replace(/{signature}/g, '[您的签名]');
+    
+    document.getElementById('preview-content').textContent = previewContent;
+    
+    // 显示模态框
+    const modal = new bootstrap.Modal(document.getElementById('emailPreviewModal'));
+    modal.show();
+}
+</script>
+{% endblock %}

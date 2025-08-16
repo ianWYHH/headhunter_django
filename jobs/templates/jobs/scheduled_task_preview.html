@@ -1,0 +1,67 @@
+{% extends 'jobs/base.html' %}
+
+{% block title %}邮件预览 - {{ task.name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">邮件内容预览</h1>
+    <a href="{% url 'jobs:scheduled_task_detail' task.id %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> 返回任务详情
+    </a>
+</div>
+
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i>
+    此任务将向 
+    {% if task.target_type == 'candidate_group' %}
+        <strong>{{ task.group.name }}</strong> 分组中的 <strong>{{ total_recipients }}</strong> 位候选人
+    {% elif task.target_type == 'contact_group' %}
+        <strong>{{ task.contact_group.name }}</strong> 分组中的 <strong>{{ total_recipients }}</strong> 位联系人
+    {% else %}
+        <strong>{{ total_recipients }}</strong> 位{{ recipient_type }}
+    {% endif %}
+    发送邮件。以下是前5位{{ recipient_type }}的邮件预览：
+</div>
+
+{% for email_data in rendered_emails %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="card-title mb-0">
+            收件人: {{ email_data.recipient.name }}
+            {% if email_data.recipient_type == 'contact' %}
+                <small class="text-muted">({{ email_data.recipient.email }})</small>
+                <span class="badge bg-info ms-2">联系人</span>
+            {% else %}
+                {% if email_data.recipient.emails %}
+                <small class="text-muted">({{ email_data.recipient.emails.0 }})</small>
+                {% endif %}
+                <span class="badge bg-primary ms-2">候选人</span>
+            {% endif %}
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="mb-3">
+            <strong>邮件主题:</strong>
+            <div class="border rounded p-2 bg-light">{{ email_data.subject }}</div>
+        </div>
+        <div>
+            <strong>邮件内容:</strong>
+            <div class="border rounded p-3 bg-light" style="max-height: 400px; overflow-y: auto;">
+                {{ email_data.content|safe }}
+            </div>
+        </div>
+    </div>
+</div>
+{% empty %}
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle"></i>
+    该分组中没有有效邮箱的{{ recipient_type|default:"收件人" }}，无法预览邮件内容。
+</div>
+{% endfor %}
+
+<div class="text-center mt-4">
+    <a href="{% url 'jobs:scheduled_task_detail' task.id %}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> 返回任务详情
+    </a>
+</div>
+{% endblock %} 

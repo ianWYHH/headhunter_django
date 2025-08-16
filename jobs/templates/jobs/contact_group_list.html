@@ -1,0 +1,177 @@
+{% extends 'jobs/base.html' %}
+{% load static %}
+
+{% block title %}联系人分组管理{% endblock %}
+
+{% block page_title %}联系人分组管理{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 操作按钮 -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="page-actions">
+            <a href="{% url 'jobs:contact_group_add' %}" class="btn btn-success">
+                <i class="fas fa-plus"></i> 创建分组
+            </a>
+            <a href="{% url 'jobs:contact_list' %}" class="btn btn-outline-primary">
+                <i class="fas fa-users"></i> 联系人管理
+            </a>
+        </div>
+        <div class="d-none d-md-block">
+            <small class="text-muted">共 {{ page_obj.paginator.count }} 个分组</small>
+        </div>
+    </div>
+
+    <!-- 分组列表 -->
+    {% if page_obj %}
+        <div class="row">
+            {% for group in page_obj %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h5 class="card-title mb-0">
+                                <a href="{% url 'jobs:contact_group_detail' group.id %}" 
+                                   class="text-decoration-none">
+                                    {{ group.name }}
+                                </a>
+                            </h5>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" 
+                                        type="button" data-bs-toggle="dropdown">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a class="dropdown-item" 
+                                           href="{% url 'jobs:contact_group_detail' group.id %}">
+                                            <i class="fas fa-eye"></i> 查看详情
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" 
+                                           href="{% url 'jobs:contact_group_edit' group.id %}">
+                                            <i class="fas fa-edit"></i> 编辑分组
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <form method="post" 
+                                              action="{% url 'jobs:contact_group_delete' group.id %}"
+                                              onsubmit="return confirm('确定要删除分组 {{ group.name }} 吗？')"
+                                              style="display: inline;">
+                                            {% csrf_token %}
+                                            <button type="submit" class="dropdown-item text-danger">
+                                                <i class="fas fa-trash"></i> 删除分组
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <small class="text-muted">
+                                <i class="fas fa-user"></i> {{ group.user.username }}
+                                <i class="fas fa-calendar ms-2"></i> {{ group.created_at|date:"Y-m-d" }}
+                            </small>
+                        </div>
+
+                        {% if group.description %}
+                        <p class="card-text text-muted small">
+                            {{ group.description|truncatechars:100 }}
+                        </p>
+                        {% endif %}
+
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <div class="stat-box">
+                                    <div class="stat-number text-primary">{{ group.contact_count }}</div>
+                                    <div class="stat-label">联系人</div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="stat-box">
+                                    <div class="stat-number text-info">
+                                        {{ group.updated_at|date:"m-d" }}
+                                    </div>
+                                    <div class="stat-label">最后更新</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                创建者：{{ group.created_by.username|default:"系统" }}
+                            </small>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a href="{% url 'jobs:contact_group_detail' group.id %}" 
+                                   class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'jobs:contact_group_edit' group.id %}" 
+                                   class="btn btn-outline-info btn-sm">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- 分页 -->
+        {% include 'jobs/partials/pagination.html' %}
+    {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-layer-group fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">暂无联系人分组</h5>
+            <p class="text-muted">您可以 <a href="{% url 'jobs:contact_group_add' %}">创建新分组</a> 来组织管理联系人</p>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.stat-box {
+    padding: 0.5rem;
+}
+
+.stat-number {
+    font-size: 1.5rem;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+}
+
+.badge {
+    font-size: 0.7rem;
+}
+
+.dropdown-toggle::after {
+    display: none;
+}
+
+.btn-group-sm > .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,459 @@
+{% extends 'jobs/base.html' %}
+{% load static %}
+
+{% block title %}收件详情{% endblock %}
+
+{% block page_title %}收件详情{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- 主要内容 -->
+        <div class="col-md-8">
+            <!-- 邮件头部信息 -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-envelope-open"></i> 邮件详情
+                    </h5>
+                    <div class="btn-group" role="group">
+                        {% if not email.is_read %}
+                            <button type="button" onclick="markAsRead()" class="btn btn-success btn-sm">
+                                <i class="fas fa-check"></i> 标记已读
+                            </button>
+                        {% endif %}
+                        <button type="button" onclick="toggleImportant()" 
+                                class="btn btn-warning btn-sm">
+                            <i class="fas fa-star"></i> 
+                            {% if email.is_important %}取消重要{% else %}标记重要{% endif %}
+                        </button>
+                        <a href="{% url 'jobs:incoming_emails' %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-arrow-left"></i> 返回列表
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- 邮件状态 -->
+                    <div class="mb-3">
+                        {% if not email.is_read %}
+                            <span class="badge bg-warning">
+                                <i class="fas fa-envelope"></i> 未读
+                            </span>
+                        {% else %}
+                            <span class="badge bg-success">
+                                <i class="fas fa-envelope-open"></i> 已读
+                            </span>
+                        {% endif %}
+                        
+                        <span class="badge bg-info">{{ email.get_email_type_display }}</span>
+                        
+                        {% if email.is_important %}
+                            <span class="badge bg-danger">
+                                <i class="fas fa-star"></i> 重要
+                            </span>
+                        {% endif %}
+                        
+                        {% if email.attachments_count > 0 %}
+                            <span class="badge bg-secondary">
+                                <i class="fas fa-paperclip"></i> {{ email.attachments_count }} 个附件
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    <!-- 邮件基本信息 -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="info-item mb-3">
+                                <label class="fw-bold text-muted">发件人：</label>
+                                <div class="info-value">
+                                    <i class="fas fa-user text-primary"></i>
+                                    {% if email.sender_name %}
+                                        {{ email.sender_name }} &lt;{{ email.sender_email }}&gt;
+                                    {% else %}
+                                        {{ email.sender_email }}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-item mb-3">
+                                <label class="fw-bold text-muted">接收邮箱：</label>
+                                <div class="info-value">
+                                    <i class="fas fa-inbox text-success"></i>
+                                    {{ email.received_account.email_address }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-item mb-3">
+                                <label class="fw-bold text-muted">收到时间：</label>
+                                <div class="info-value">
+                                    <i class="fas fa-clock text-info"></i>
+                                    {{ email.received_at|date:"Y-m-d H:i:s" }}
+                                    <small class="text-muted">({{ email.received_at|timesince }}前)</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-item mb-3">
+                                <label class="fw-bold text-muted">处理时间：</label>
+                                <div class="info-value">
+                                    <i class="fas fa-cog text-secondary"></i>
+                                    {{ email.processed_at|date:"Y-m-d H:i:s" }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 关联信息 -->
+                    {% if email.candidate or email.original_email_log %}
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-2 mb-3">关联信息</h6>
+                        </div>
+                        {% if email.candidate %}
+                        <div class="col-md-6">
+                            <div class="info-item mb-3">
+                                <label class="fw-bold text-muted">关联候选人：</label>
+                                <div class="info-value">
+                                    <i class="fas fa-user-tie text-primary"></i>
+                                    <a href="{% url 'jobs:candidate_detail' email.candidate.id %}" 
+                                       class="text-decoration-none">
+                                        {{ email.candidate.name }}
+                                    </a>
+                                    {% if email.candidate.position %}
+                                        <small class="text-muted">- {{ email.candidate.position }}</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if email.original_email_log %}
+                        <div class="col-md-6">
+                            <div class="info-item mb-3">
+                                <label class="fw-bold text-muted">原始邮件：</label>
+                                <div class="info-value">
+                                    <i class="fas fa-reply text-info"></i>
+                                    回复邮件：{{ email.original_email_log.subject|truncatechars:40 }}
+                                    <br><small class="text-muted">
+                                        发送时间：{{ email.original_email_log.sent_at|date:"m-d H:i" }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- 邮件主题 -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-tag"></i> 邮件主题
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <h5 class="mb-0">{{ email.subject }}</h5>
+                </div>
+            </div>
+
+            <!-- 邮件内容 -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-file-text"></i> 邮件内容
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <!-- 内容切换按钮 -->
+                    {% if email.html_content %}
+                    <div class="mb-3">
+                        <div class="btn-group" role="group">
+                            <input type="radio" class="btn-check" name="content-type" id="show-text" checked>
+                            <label class="btn btn-outline-primary btn-sm" for="show-text">
+                                <i class="fas fa-align-left"></i> 纯文本
+                            </label>
+                            
+                            <input type="radio" class="btn-check" name="content-type" id="show-html">
+                            <label class="btn btn-outline-primary btn-sm" for="show-html">
+                                <i class="fas fa-code"></i> HTML
+                            </label>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- 纯文本内容 -->
+                    <div id="text-content" class="email-content">
+                        <pre class="text-wrap">{{ email.content }}</pre>
+                    </div>
+
+                    <!-- HTML内容 -->
+                    {% if email.html_content %}
+                    <div id="html-content" class="email-content" style="display: none;">
+                        <div class="border p-3" style="background-color: #f8f9fa;">
+                            {{ email.html_content|safe }}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- 邮件头部信息 -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-info-circle"></i> 技术信息
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="info-item mb-3">
+                                <label class="fw-bold text-muted">消息ID：</label>
+                                <div class="info-value">
+                                    <code>{{ email.message_id }}</code>
+                                </div>
+                            </div>
+                        </div>
+                        {% if email.in_reply_to %}
+                        <div class="col-md-6">
+                            <div class="info-item mb-3">
+                                <label class="fw-bold text-muted">回复消息ID：</label>
+                                <div class="info-value">
+                                    <code>{{ email.in_reply_to }}</code>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if email.references %}
+                        <div class="col-12">
+                            <div class="info-item mb-3">
+                                <label class="fw-bold text-muted">引用消息：</label>
+                                <div class="info-value">
+                                    <code class="text-wrap">{{ email.references }}</code>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧操作面板 -->
+        <div class="col-md-4">
+            <!-- 快速操作 -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-bolt"></i> 快速操作
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        {% if email.candidate %}
+                            <a href="{% url 'jobs:candidate_detail' email.candidate.id %}" 
+                               class="btn btn-outline-primary">
+                                <i class="fas fa-user"></i> 查看候选人
+                            </a>
+                        {% endif %}
+                        
+                        {% if email.original_email_log %}
+                            <button type="button" class="btn btn-outline-info">
+                                <i class="fas fa-reply"></i> 查看原邮件
+                            </button>
+                        {% endif %}
+                        
+                        <button type="button" class="btn btn-outline-success" onclick="replyEmail()">
+                            <i class="fas fa-reply"></i> 回复邮件
+                        </button>
+                        
+                        <button type="button" class="btn btn-outline-warning" onclick="forwardEmail()">
+                            <i class="fas fa-share"></i> 转发邮件
+                        </button>
+                        
+                        <hr>
+                        
+                        <button type="button" class="btn btn-outline-danger" onclick="deleteEmail()">
+                            <i class="fas fa-trash"></i> 删除邮件
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 统计信息 -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-chart-bar"></i> 相关统计
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if email.candidate %}
+                        <p><strong>来自此候选人的邮件：</strong> 
+                           {{ email.candidate.incoming_emails.count }} 封</p>
+                    {% endif %}
+                    
+                    <p><strong>来自此邮箱的邮件：</strong> 
+                       {{ same_sender_count }} 封</p>
+                    
+                    <p><strong>此类型邮件：</strong> 
+                       {{ same_type_count }} 封</p>
+                    
+                    {% if email.received_account %}
+                        <p><strong>此接收邮箱总邮件：</strong> 
+                           {{ email.received_account.incoming_emails.count }} 封</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 内容类型切换
+    const showTextRadio = document.getElementById('show-text');
+    const showHtmlRadio = document.getElementById('show-html');
+    const textContent = document.getElementById('text-content');
+    const htmlContent = document.getElementById('html-content');
+
+    if (showTextRadio && showHtmlRadio) {
+        showTextRadio.addEventListener('change', function() {
+            if (this.checked) {
+                textContent.style.display = 'block';
+                htmlContent.style.display = 'none';
+            }
+        });
+
+        showHtmlRadio.addEventListener('change', function() {
+            if (this.checked) {
+                textContent.style.display = 'none';
+                htmlContent.style.display = 'block';
+            }
+        });
+    }
+});
+
+// 操作函数
+function markAsRead() {
+    fetch(`/emails/{{ email.id }}/mark-read/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function toggleImportant() {
+    fetch(`/emails/{{ email.id }}/toggle-important/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function deleteEmail() {
+    if (confirm('确定要删除这封邮件吗？')) {
+        fetch(`/emails/{{ email.id }}/delete/`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = "{% url 'jobs:incoming_emails' %}";
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+}
+
+function replyEmail() {
+    // 回复邮件功能 - 跳转到邮件发送页面并预填充信息
+    const replyUrl = "{% url 'jobs:unified_email_send' %}?" + 
+                    "reply_to={{ email.id }}&" +
+                    "recipient={{ email.sender_email }}&" +
+                    "subject=Re: {{ email.subject|urlencode }}";
+    window.location.href = replyUrl;
+}
+
+function forwardEmail() {
+    // 转发邮件功能
+    const forwardUrl = "{% url 'jobs:unified_email_send' %}?" + 
+                      "forward={{ email.id }}&" +
+                      "subject=Fwd: {{ email.subject|urlencode }}";
+    window.location.href = forwardUrl;
+}
+</script>
+
+<style>
+.info-item {
+    margin-bottom: 1rem;
+}
+
+.info-item label {
+    display: block;
+    font-size: 0.875rem;
+    margin-bottom: 0.25rem;
+}
+
+.info-value {
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
+
+.email-content pre {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 1rem;
+    font-family: inherit;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.btn-check:checked + .btn {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: white;
+}
+
+code {
+    font-size: 0.85rem;
+    color: #e83e8c;
+    background-color: #f8f9fa;
+    padding: 0.2rem 0.4rem;
+    border-radius: 0.25rem;
+}
+
+.text-wrap {
+    white-space: pre-wrap !important;
+    word-wrap: break-word !important;
+}
+</style>
+{% endblock %}

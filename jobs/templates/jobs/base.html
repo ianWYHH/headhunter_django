@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -5,15 +6,202 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token }}">
     <title>{% block title %}猎头职位管理系统{% endblock %}</title>
+    
+    <!-- Google Fonts - Roboto字体 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- 统一样式表 -->
+    <link rel="stylesheet" href="{% static 'jobs/css/unified-style.css' %}">
+    
+    <!-- 基础样式 -->
     <style>
-        body { background-color: #f8f9fa; }
-        .table-hover tbody tr:not(.no-hover) { cursor: pointer; }
-        .htmx-indicator { display: none; }
-        .htmx-request .htmx-indicator, .htmx-request.htmx-indicator { display: inline-block; }
-        .nav-link.active { font-weight: bold; }
+        /* HTMX 指示器样式 */
+        .htmx-indicator { 
+            display: none; 
+        }
+        .htmx-request .htmx-indicator, 
+        .htmx-request.htmx-indicator { 
+            display: inline-block; 
+        }
+        
+        /* 表格悬停效果保持 */
+        .table-hover tbody tr:not(.no-hover) { 
+            cursor: pointer; 
+        }
+        
+        /* 页面内容区域 - 紧凑版 */
+        .main-content {
+            min-height: calc(100vh - 80px);  /* 减少高度计算 */
+            padding-top: 0.75rem;  /* 极小顶部内边距 */
+            padding-bottom: 1rem;  /* 减少底部内边距 */
+        }
+        
+        /* 面包屑导航 */
+        .breadcrumb {
+            background: transparent;
+            padding: 0;
+            margin-bottom: 1rem;
+        }
+        
+        .breadcrumb-item + .breadcrumb-item::before {
+            color: var(--bs-secondary);
+        }
+        
+        /* 候选人/职位编辑页面 Offcanvas 面板样式强制覆盖 */
+        .offcanvas {
+            max-height: 100vh !important;
+            overflow-y: auto !important;
+        }
+        
+        .offcanvas-body {
+            padding: 0 !important;
+            overflow-y: auto !important;
+            max-height: calc(100vh - 60px) !important;
+        }
+        
+        .offcanvas-body .detail-page-container {
+            box-shadow: none !important;
+            border-radius: 0 !important;
+            height: auto !important;
+            max-height: 100% !important;
+            overflow-y: auto !important;
+            background: white;
+        }
+        
+        .offcanvas-body .detail-tabs .nav-tabs {
+            background-color: #f8f9fa !important;
+            border-bottom: 1px solid #dee2e6 !important;
+            margin: 0 !important;
+            padding: 0 1rem !important;
+            border-radius: 0 !important;
+        }
+        
+        .offcanvas-body .detail-tabs .nav-link {
+            color: #6c757d !important;
+            border: none !important;
+            border-radius: 0 !important;
+            padding: 1rem 1.5rem !important;
+            font-weight: 500 !important;
+            transition: all 0.2s ease !important;
+        }
+        
+        .offcanvas-body .detail-tabs .nav-link:hover {
+            color: #0d6efd !important;
+            background-color: rgba(13, 110, 253, 0.1) !important;
+        }
+        
+        .offcanvas-body .detail-tabs .nav-link.active {
+            color: #0d6efd !important;
+            background-color: white !important;
+            border-bottom: 2px solid #0d6efd !important;
+            font-weight: 600 !important;
+        }
+        
+        .offcanvas-body .detail-content {
+            padding: 1rem !important;
+            max-height: none !important;
+            overflow-y: visible !important;
+        }
+        
+        .offcanvas-body .detail-form .form-label,
+        .offcanvas-body .form-label,
+        .offcanvas-body label {
+            font-size: 13px !important;
+            font-weight: 600 !important;
+            color: #6c757d !important;
+            margin-bottom: 0.25rem !important;
+            display: block !important;
+        }
+        
+        .offcanvas-body .detail-form .form-control,
+        .offcanvas-body .detail-form .form-select,
+        .offcanvas-body .detail-form textarea,
+        .offcanvas-body .form-control,
+        .offcanvas-body .form-select,
+        .offcanvas-body textarea {
+            font-size: 14px !important;
+            padding: 0.5rem !important;
+            border: 1px solid #dee2e6 !important;
+            border-radius: 0.375rem !important;
+            width: 100% !important;
+        }
+        
+        .offcanvas-body .detail-form .form-control:focus,
+        .offcanvas-body .detail-form .form-select:focus,
+        .offcanvas-body .detail-form textarea:focus,
+        .offcanvas-body .form-control:focus,
+        .offcanvas-body .form-select:focus,
+        .offcanvas-body textarea:focus {
+            border-color: #0d6efd !important;
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25) !important;
+            outline: none !important;
+        }
+        
+        .offcanvas-body .detail-actions {
+            border-top: 1px solid #dee2e6 !important;
+            padding: 1rem !important;
+            margin-top: 1rem !important;
+            background-color: #f8f9fa !important;
+        }
+        
+        .offcanvas-body .btn {
+            font-size: 14px !important;
+            padding: 0.5rem 1rem !important;
+        }
+        
+        .offcanvas-body h4 {
+            font-size: 18px !important;
+            margin-bottom: 0.5rem !important;
+            color: #212529 !important;
+            font-weight: 600 !important;
+        }
+        
+        .offcanvas-body h6 {
+            font-size: 14px !important;
+            font-weight: 600 !important;
+            color: #6c757d !important;
+            margin-bottom: 0.5rem !important;
+            margin-top: 1rem !important;
+        }
+        
+        .offcanvas-body .detail-content-block {
+            background-color: #f8f9fa !important;
+            border: 1px solid #dee2e6 !important;
+            border-radius: 0.375rem !important;
+            padding: 0.5rem !important;
+            margin-bottom: 1rem !important;
+            max-height: 150px !important;
+            overflow-y: auto !important;
+            white-space: pre-wrap !important;
+            font-size: 13px !important;
+        }
+        
+        .offcanvas-body .detail-info-row p {
+            font-size: 14px !important;
+            margin-bottom: 0.5rem !important;
+        }
+        
+        .offcanvas-body .detail-info-row strong {
+            color: #6c757d !important;
+            font-weight: 500 !important;
+            margin-right: 0.25rem !important;
+        }
+        
+        /* 修复候选人编辑滚动问题 - 版本: v3.3 */
     </style>
+    
+    {% block extra_css %}{% endblock %}
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -29,15 +217,22 @@
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item"><a class="nav-link {% if request.resolver_match.view_name == 'jobs:index' %}active{% endif %}" href="{% url 'jobs:index' %}"><i class="bi bi-briefcase-fill"></i> 职位管理</a></li>
                     <li class="nav-item"><a class="nav-link {% if request.resolver_match.view_name == 'jobs:candidate_dashboard' %}active{% endif %}" href="{% url 'jobs:candidate_dashboard' %}"><i class="bi bi-people-fill"></i> 候选人管理</a></li>
-                    <li class="nav-item"><a class="nav-link {% if request.resolver_match.view_name == 'jobs:group_management' %}active{% endif %}" href="{% url 'jobs:group_management' %}"><i class="bi bi-collection-fill"></i> 分组管理</a></li>
+                    <li class="nav-item"><a class="nav-link {% if 'contact' in request.resolver_match.view_name %}active{% endif %}" href="{% url 'jobs:contact_list' %}"><i class="bi bi-person-lines-fill"></i> 联系人管理</a></li>
                 </ul>
                 <div class="dropdown">
                     <a href="#" class="btn btn-dark dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-person-circle"></i> {{ user.username }}
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="{% url 'jobs:unified_email_send' %}"><i class="bi bi-envelope-paper"></i> 邮件发送</a></li>
+                        <li><a class="dropdown-item" href="{% url 'jobs:incoming_emails' %}"><i class="bi bi-envelope-open"></i> 收件管理</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item {% if request.resolver_match.view_name == 'jobs:group_management' %}active{% endif %}" href="{% url 'jobs:group_management' %}"><i class="bi bi-collection-fill"></i> 候选人分组管理</a></li>
+                        <li><a class="dropdown-item" href="{% url 'jobs:contact_group_list' %}"><i class="bi bi-collection"></i> 联系人分组管理</a></li>
+                        <li><a class="dropdown-item" href="{% url 'jobs:scheduled_task_list' %}"><i class="bi bi-clock"></i> 定时邮件任务</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{% url 'jobs:email_account_management' %}"><i class="bi bi-inboxes"></i> 邮箱管理</a></li>
                         <li><a class="dropdown-item" href="{% url 'jobs:email_settings' %}"><i class="bi bi-gear-fill"></i> 邮件设置</a></li>
-                        <li><a class="dropdown-item" href="{% url 'jobs:email_account_management' %}"><i class="bi bi-envelope-at-fill"></i> 邮箱账户管理</a></li>
                         <li><a class="dropdown-item" href="{% url 'jobs:api_key_management' %}"><i class="bi bi-key-fill"></i> API密钥管理</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="{% url 'jobs:task_queue' %}"><i class="bi bi-card-checklist"></i> 邮件任务队列</a></li>
@@ -50,16 +245,60 @@
             {% endif %}
         </div>
     </nav>
-    <main class="container mt-4">
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    
+    <!-- 页面标题区域 -->
+    {% block page_header %}
+    {% if not hide_page_header %}
+    <div class="page-header">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h1 class="page-title fade-in">
+                        {% block page_icon %}<i class="fas fa-home"></i>{% endblock %}
+                        {% block page_title %}猎头管理系统{% endblock %}
+                    </h1>
+                    {% block breadcrumb %}{% endblock %}
                 </div>
-            {% endfor %}
-        {% endif %}
-        {% block content %}{% endblock %}
+                <div class="col-auto">
+                    {% block page_actions %}{% endblock %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% endblock %}
+    
+    <!-- 主要内容区域 -->
+    <main class="main-content">
+        <div class="container-fluid">
+            <!-- 消息提示 -->
+            {% if messages %}
+                <div class="row">
+                    <div class="col-12">
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show fade-in" role="alert">
+                                <div class="d-flex align-items-center">
+                                    {% if message.tags == 'success' %}
+                                        <i class="fas fa-check-circle me-2"></i>
+                                    {% elif message.tags == 'error' or message.tags == 'danger' %}
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                    {% elif message.tags == 'warning' %}
+                                        <i class="fas fa-exclamation-circle me-2"></i>
+                                    {% elif message.tags == 'info' %}
+                                        <i class="fas fa-info-circle me-2"></i>
+                                    {% endif %}
+                                    <span>{{ message }}</span>
+                                </div>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+            
+            <!-- 页面内容 -->
+            {% block content %}{% endblock %}
+        </div>
     </main>
     <div class="offcanvas offcanvas-end" tabindex="-1" id="detailOffcanvas" aria-labelledby="detailOffcanvasLabel" style="width: 50vw;">
         <div class="offcanvas-header">
@@ -70,6 +309,7 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="{% static 'jobs/js/unified-form.js' %}"></script>
     <script>
       // **核心修复**: 全局JavaScript逻辑
       document.addEventListener('DOMContentLoaded', function() {
@@ -107,26 +347,77 @@
 
         // --- 3. Event Delegation for AI Buttons ---
         document.body.addEventListener('click', function(event) {
-            const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+            // 更健壮的CSRF令牌获取方法
+            function getCSRFToken() {
+                // 方法1: 从meta标签获取
+                const metaToken = document.querySelector('meta[name="csrf-token"]');
+                if (metaToken && metaToken.content) {
+                    return metaToken.content;
+                }
+                
+                // 方法2: 从Cookie获取
+                const cookieValue = document.cookie
+                    .split('; ')
+                    .find(row => row.startsWith('csrftoken='));
+                if (cookieValue) {
+                    return cookieValue.split('=')[1];
+                }
+                
+                console.error('无法获取CSRF令牌');
+                return null;
+            }
+
+            // 更健壮的字段查找方法
+            function findFormFields() {
+                const subjectField = document.getElementById('email-subject') || 
+                                   document.querySelector('input[name="subject"]') ||
+                                   document.querySelector('input[id*="subject"]');
+                
+                const contentField = document.getElementById('email-content') || 
+                                   document.querySelector('textarea[name="content"]') ||
+                                   document.querySelector('textarea[id*="content"]');
+                
+                console.log('查找到的字段:', {
+                    subjectField: subjectField,
+                    subjectId: subjectField ? subjectField.id : 'null',
+                    contentField: contentField,
+                    contentId: contentField ? contentField.id : 'null'
+                });
+                
+                return { subjectField, contentField };
+            }
 
             // --- Handle AI Generate Button ---
             if (event.target && event.target.id === 'ai-generate-btn') {
                 const generateBtn = event.target;
-                const subjectField = document.getElementById('email-subject');
-                const contentField = document.getElementById('email-content');
+                const { subjectField, contentField } = findFormFields();
 
                 const keywords = document.getElementById('ai-keywords').value;
                 const jobId = document.getElementById('ai-job-context').value;
                 const provider = document.getElementById('ai-model-provider').value;
+
+                console.log('AI生成请求参数:', { keywords, jobId, provider });
+                console.log('表单字段检查:', {
+                    subjectFieldExists: !!subjectField,
+                    contentFieldExists: !!contentField
+                });
 
                 if (!keywords || !jobId) {
                     alert('请填写核心关键词并选择一个关联职位。');
                     return;
                 }
 
+                const csrfToken = getCSRFToken();
+                if (!csrfToken) {
+                    alert('无法获取安全令牌，请刷新页面重试。');
+                    return;
+                }
+
                 generateBtn.classList.add('htmx-request');
                 generateBtn.disabled = true;
 
+                console.log('开始发送AI生成请求...');
+                
                 fetch("{% url 'jobs:ai_generate_email' %}", {
                     method: 'POST',
                     headers: {
@@ -139,20 +430,102 @@
                         provider: provider
                     })
                 })
-                .then(response => response.json())
+                .then(response => {
+                    console.log('收到响应，状态码:', response.status);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    return response.json();
+                })
                 .then(data => {
+                    console.log('AI生成响应数据:', data);
+                    
                     if (data.error) {
                         alert('AI 生成失败: ' + data.error);
                     } else {
-                        subjectField.value = data.subject || '';
-                        contentField.value = data.body || '';
+                        // 重新查找字段（防止DOM更新）
+                        const { subjectField: currentSubjectField, contentField: currentContentField } = findFormFields();
+                        
+                        let fillResults = {
+                            subjectFilled: false,
+                            contentFilled: false,
+                            errors: []
+                        };
+                        
+                        // 填入主题
+                        if (data.subject) {
+                            if (currentSubjectField) {
+                                currentSubjectField.value = data.subject;
+                                fillResults.subjectFilled = true;
+                                console.log('主题已填入:', data.subject);
+                            } else {
+                                fillResults.errors.push('找不到邮件主题字段');
+                                console.error('找不到邮件主题字段');
+                            }
+                        }
+                        
+                        // 填入内容
+                        if (data.body) {
+                            if (currentContentField) {
+                                currentContentField.value = data.body;
+                                fillResults.contentFilled = true;
+                                console.log('内容已填入，长度:', data.body.length);
+                                
+                                // 触发输入事件，确保其他脚本知道内容已更新
+                                currentContentField.dispatchEvent(new Event('input', { bubbles: true }));
+                                currentContentField.dispatchEvent(new Event('change', { bubbles: true }));
+                            } else {
+                                fillResults.errors.push('找不到邮件内容字段');
+                                console.error('找不到邮件内容字段');
+                            }
+                        }
+                        
+                        // 显示结果提示
+                        const successMsg = document.createElement('div');
+                        if (fillResults.errors.length > 0) {
+                            successMsg.className = 'alert alert-warning alert-dismissible fade show mt-2';
+                            successMsg.innerHTML = `
+                                <i class="bi bi-exclamation-triangle"></i> AI生成完成，但填入时遇到问题：
+                                <br><small>${fillResults.errors.join('; ')}</small>
+                                <br><small>生成的内容：主题="${data.subject || '无'}", 内容长度=${(data.body || '').length}字符</small>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            `;
+                        } else {
+                            successMsg.className = 'alert alert-success alert-dismissible fade show mt-2';
+                            successMsg.innerHTML = `
+                                <i class="bi bi-check-circle"></i> AI生成成功！邮件内容已填入。
+                                <br><small>主题：${fillResults.subjectFilled ? '✓' : '✗'} | 内容：${fillResults.contentFilled ? '✓' : '✗'}</small>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            `;
+                        }
+                        
+                        generateBtn.parentNode.appendChild(successMsg);
+                        
+                        // 5秒后自动隐藏提示
+                        setTimeout(() => {
+                            if (successMsg.parentNode) {
+                                successMsg.parentNode.removeChild(successMsg);
+                            }
+                        }, 5000);
                     }
                 })
                 .catch(error => {
                     console.error('AI生成请求失败:', error);
-                    alert('请求AI服务时发生错误，请查看控制台。');
+                    
+                    // 显示错误提示
+                    const errorMsg = document.createElement('div');
+                    errorMsg.className = 'alert alert-danger alert-dismissible fade show mt-2';
+                    errorMsg.innerHTML = `
+                        <i class="bi bi-exclamation-triangle"></i> AI生成失败: ${error.message}
+                        <br><small>请检查网络连接或联系管理员。</small>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                    generateBtn.parentNode.appendChild(errorMsg);
                 })
                 .finally(() => {
+                    console.log('AI生成请求完成');
                     generateBtn.classList.remove('htmx-request');
                     generateBtn.disabled = false;
                 });
@@ -161,24 +534,44 @@
             // --- Handle AI Optimize Button ---
             if (event.target && event.target.id === 'ai-optimize-btn') {
                 const optimizeBtn = event.target;
-                const contentField = document.getElementById('email-content');
+                const { contentField } = findFormFields();
                 const providerSelect = document.getElementById('ai-model-provider');
+
+                console.log('AI润色字段检查:', {
+                    contentFieldExists: !!contentField,
+                    providerSelectExists: !!providerSelect
+                });
 
                 if (!providerSelect){
                     alert('无法找到AI模型选择器。');
                     return;
                 }
 
+                if (!contentField) {
+                    alert('无法找到邮件内容字段。');
+                    return;
+                }
+
                 const provider = providerSelect.value;
                 const content = contentField.value;
+
+                console.log('AI润色请求参数:', { provider, contentLength: content.length });
 
                 if (!content) {
                     alert('内容为空，无需润色。');
                     return;
                 }
 
+                const csrfToken = getCSRFToken();
+                if (!csrfToken) {
+                    alert('无法获取安全令牌，请刷新页面重试。');
+                    return;
+                }
+
                 optimizeBtn.classList.add('htmx-request');
                 optimizeBtn.disabled = true;
+
+                console.log('开始发送AI润色请求...');
 
                 fetch("{% url 'jobs:ai_optimize_email' %}", {
                     method: 'POST',
@@ -191,19 +584,93 @@
                         provider: provider
                     })
                 })
-                .then(response => response.json())
+                .then(response => {
+                    console.log('收到润色响应，状态码:', response.status);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    return response.json();
+                })
                 .then(data => {
+                    console.log('AI润色响应数据:', data);
+                    
                     if (data.error) {
                         alert('AI 润色失败: ' + data.error);
                     } else {
-                        contentField.value = data.optimized_text || content;
+                        // 重新查找内容字段（防止DOM更新）
+                        const { contentField: currentContentField } = findFormFields();
+                        
+                        let updateSuccess = false;
+                        let updateError = '';
+                        
+                        if (data.optimized_text) {
+                            if (currentContentField) {
+                                const originalLength = content.length;
+                                currentContentField.value = data.optimized_text;
+                                updateSuccess = true;
+                                
+                                // 触发输入事件，确保其他脚本知道内容已更新
+                                currentContentField.dispatchEvent(new Event('input', { bubbles: true }));
+                                currentContentField.dispatchEvent(new Event('change', { bubbles: true }));
+                                
+                                console.log('内容已更新:', { 
+                                    originalLength,
+                                    newLength: data.optimized_text.length 
+                                });
+                            } else {
+                                updateError = '找不到邮件内容字段，无法更新内容';
+                                console.error(updateError);
+                            }
+                        } else {
+                            updateError = 'AI返回的数据中没有润色后的内容';
+                            console.error(updateError);
+                        }
+                        
+                        // 显示结果提示
+                        const successMsg = document.createElement('div');
+                        if (updateError) {
+                            successMsg.className = 'alert alert-warning alert-dismissible fade show mt-2';
+                            successMsg.innerHTML = `
+                                <i class="bi bi-exclamation-triangle"></i> AI润色完成，但更新时遇到问题：
+                                <br><small>${updateError}</small>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            `;
+                        } else {
+                            successMsg.className = 'alert alert-success alert-dismissible fade show mt-2';
+                            successMsg.innerHTML = `
+                                <i class="bi bi-check-circle"></i> AI润色成功！内容已更新。
+                                <br><small>内容长度：${content.length} → ${data.optimized_text.length} 字符</small>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            `;
+                        }
+                        
+                        optimizeBtn.parentNode.appendChild(successMsg);
+                        
+                        // 5秒后自动隐藏成功提示
+                        setTimeout(() => {
+                            if (successMsg.parentNode) {
+                                successMsg.parentNode.removeChild(successMsg);
+                            }
+                        }, 5000);
                     }
                 })
                 .catch(error => {
                     console.error('AI润色请求失败:', error);
-                    alert('请求AI服务时发生错误，请查看控制台。');
+                    
+                    // 显示错误提示
+                    const errorMsg = document.createElement('div');
+                    errorMsg.className = 'alert alert-danger alert-dismissible fade show mt-2';
+                    errorMsg.innerHTML = `
+                        <i class="bi bi-exclamation-triangle"></i> AI润色失败: ${error.message}
+                        <br><small>请检查网络连接或联系管理员。</small>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                    optimizeBtn.parentNode.appendChild(errorMsg);
                 })
                 .finally(() => {
+                    console.log('AI润色请求完成');
                     optimizeBtn.classList.remove('htmx-request');
                     optimizeBtn.disabled = false;
                 });

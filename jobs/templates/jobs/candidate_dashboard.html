@@ -2,10 +2,10 @@
 {% block title %}候选人管理 - {{ block.super }}{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">候选人仪表盘</h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addCandidateModal">
+<!-- 简化的顶部操作区域 -->
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <div class="page-actions">
+        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addCandidateModal">
             <i class="bi bi-person-plus-fill"></i> 新增候选人 (AI 解析)
         </button>
     </div>
@@ -13,28 +13,112 @@
 
 <form id="candidate-list-form" action="{% url 'jobs:add_to_group' %}" method="POST">
     {% csrf_token %}
-    <div class="row g-3 mb-4 p-3 bg-light border rounded align-items-end">
-        <div class="col-md-6">
+    <input type="hidden" name="page" value="1">
+    <!-- Enhanced Search Filters -->
+    <div class="row g-3 mb-4 p-3 bg-light border rounded">
+        <div class="col-md-12">
+            <h6 class="mb-3"><i class="fas fa-search"></i> 高级搜索</h6>
+        </div>
+        
+        <!-- General Keyword Search -->
+        <div class="col-md-4">
             <label for="search" class="form-label">关键词搜索</label>
-            <input type="text" name="search" id="search" class="form-control" placeholder="姓名、邮箱、技能关键词..."
+            <input type="text" name="search" id="search" class="form-control" 
+                   placeholder="姓名、邮箱、技能、职位、地点..."
                    hx-get="{% url 'jobs:candidate_list_partial' %}"
                    hx-target="#candidate-list-container"
-                   hx-trigger="keyup changed delay:300ms, search"
+                   hx-trigger="keyup changed delay:500ms, search"
                    hx-include="#candidate-list-form">
         </div>
-        <div class="col-md-4">
-            <label for="group_id" class="form-label">批量操作</label>
-            <select name="group_id" id="group_id" class="form-select">
-                <option value="">选择一个分组...</option>
-                {% for group in groups %}
-                <option value="{{ group.id }}">{{ group.name }}</option>
+        
+        <!-- Location Filter -->
+        <div class="col-md-2">
+            <label for="location" class="form-label">所在地</label>
+            <input type="text" name="location" id="location" class="form-control" 
+                   placeholder="如：北京、上海"
+                   hx-get="{% url 'jobs:candidate_list_partial' %}"
+                   hx-target="#candidate-list-container"
+                   hx-trigger="keyup changed delay:500ms, search"
+                   hx-include="#candidate-list-form">
+        </div>
+        
+        <!-- Education Filter -->
+        <div class="col-md-2">
+            <label for="education" class="form-label">学历</label>
+            <select name="education" id="education" class="form-select"
+                    hx-get="{% url 'jobs:candidate_list_partial' %}"
+                    hx-target="#candidate-list-container"
+                    hx-trigger="change"
+                    hx-include="#candidate-list-form">
+                <option value="all">全部学历</option>
+                {% for value, label in education_choices %}
+                    {% if value != '未知' %}
+                    <option value="{{ value }}">{{ label }}</option>
+                    {% endif %}
                 {% endfor %}
             </select>
         </div>
+        
+        <!-- Gender Filter -->
         <div class="col-md-2">
-            <button type="submit" class="btn btn-secondary w-100">
-                <i class="bi bi-plus-lg"></i> 添加至分组
-            </button>
+            <label for="gender" class="form-label">性别</label>
+            <select name="gender" id="gender" class="form-select"
+                    hx-get="{% url 'jobs:candidate_list_partial' %}"
+                    hx-target="#candidate-list-container"
+                    hx-trigger="change"
+                    hx-include="#candidate-list-form">
+                <option value="all">全部性别</option>
+                {% for value, label in gender_choices %}
+                    {% if value != '未知' %}
+                    <option value="{{ value }}">{{ label }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+        </div>
+        
+        <!-- Age Range -->
+        <div class="col-md-2">
+            <label class="form-label">年龄范围</label>
+            <div class="d-flex gap-1 align-items-center">
+                <input type="number" name="age_min" id="age_min" class="form-control form-control-sm" 
+                       placeholder="最小" min="18" max="70"
+                       hx-get="{% url 'jobs:candidate_list_partial' %}"
+                       hx-target="#candidate-list-container"
+                       hx-trigger="keyup changed delay:800ms"
+                       hx-include="#candidate-list-form">
+                <span class="text-muted">-</span>
+                <input type="number" name="age_max" id="age_max" class="form-control form-control-sm" 
+                       placeholder="最大" min="18" max="70"
+                       hx-get="{% url 'jobs:candidate_list_partial' %}"
+                       hx-target="#candidate-list-container"
+                       hx-trigger="keyup changed delay:800ms"
+                       hx-include="#candidate-list-form">
+            </div>
+        </div>
+        
+        <!-- Action Buttons Row -->
+        <div class="col-md-12">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-8">
+                    <label for="group_id" class="form-label">批量操作</label>
+                    <div class="d-flex gap-2">
+                        <select name="group_id" id="group_id" class="form-select">
+                            <option value="">选择一个分组...</option>
+                            {% for group in groups %}
+                            <option value="{{ group.id }}">{{ group.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn btn-secondary">
+                            <i class="bi bi-plus-lg"></i> 添加至分组
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-4 text-end">
+                    <button type="button" class="btn btn-outline-secondary" id="clear-filters-btn">
+                        <i class="fas fa-times"></i> 清除筛选
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -49,4 +133,85 @@
 </form>
 
 {% include 'jobs/partials/candidate_add_modal.html' %}
+
+<script>
+// Reset pagination when search filters change and handle clear filters
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('candidate-list-form');
+    if (form) {
+        // Reset pagination on any filter change
+        const filterInputs = form.querySelectorAll('input[type="text"], input[type="number"], select');
+        filterInputs.forEach(function(input) {
+            if (input.name !== 'page' && input.name !== 'group_id') {
+                input.addEventListener('input', function() {
+                    const pageInput = form.querySelector('input[name="page"]');
+                    if (pageInput) {
+                        pageInput.value = '1';
+                    }
+                });
+                input.addEventListener('change', function() {
+                    const pageInput = form.querySelector('input[name="page"]');
+                    if (pageInput) {
+                        pageInput.value = '1';
+                    }
+                });
+            }
+        });
+        
+        // Clear filters functionality
+        const clearBtn = document.getElementById('clear-filters-btn');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', function() {
+                // Reset all search inputs
+                form.querySelector('input[name="search"]').value = '';
+                form.querySelector('input[name="location"]').value = '';
+                form.querySelector('select[name="education"]').value = 'all';
+                form.querySelector('select[name="gender"]').value = 'all';
+                form.querySelector('input[name="age_min"]').value = '';
+                form.querySelector('input[name="age_max"]').value = '';
+                form.querySelector('input[name="page"]').value = '1';
+                
+                // Trigger HTMX request to reload the list
+                htmx.ajax('GET', '{% url "jobs:candidate_list_partial" %}', {
+                    target: '#candidate-list-container',
+                    source: form
+                });
+            });
+        }
+    }
+});
+
+// Preserve form values after HTMX responses
+document.addEventListener('htmx:beforeSwap', function(evt) {
+    if (evt.target.id === 'candidate-list-container') {
+        // Store current form values
+        const form = document.getElementById('candidate-list-form');
+        if (form) {
+            window.candidateFilters = {
+                search: form.querySelector('input[name="search"]').value,
+                location: form.querySelector('input[name="location"]').value,
+                education: form.querySelector('select[name="education"]').value,
+                gender: form.querySelector('select[name="gender"]').value,
+                age_min: form.querySelector('input[name="age_min"]').value,
+                age_max: form.querySelector('input[name="age_max"]').value,
+            };
+        }
+    }
+});
+
+document.addEventListener('htmx:afterSwap', function(evt) {
+    if (evt.target.id === 'candidate-list-container' && window.candidateFilters) {
+        // Restore form values
+        const form = document.getElementById('candidate-list-form');
+        if (form) {
+            form.querySelector('input[name="search"]').value = window.candidateFilters.search || '';
+            form.querySelector('input[name="location"]').value = window.candidateFilters.location || '';
+            form.querySelector('select[name="education"]').value = window.candidateFilters.education || 'all';
+            form.querySelector('select[name="gender"]').value = window.candidateFilters.gender || 'all';
+            form.querySelector('input[name="age_min"]').value = window.candidateFilters.age_min || '';
+            form.querySelector('input[name="age_max"]').value = window.candidateFilters.age_max || '';
+        }
+    }
+});
+</script>
 {% endblock %}

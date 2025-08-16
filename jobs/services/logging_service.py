@@ -1,4 +1,5 @@
-from ..models import ActionLog, User
+from django.contrib.auth.models import User
+from ..models import ActionLog
 
 def create_log(user: User, action_description: str, related_object=None):
     """

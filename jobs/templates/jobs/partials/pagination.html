@@ -1,0 +1,133 @@
+{% if page_obj and page_obj.paginator.num_pages > 1 %}
+<nav aria-label="分页导航">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link pagination-link" 
+                   href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                   data-page="1"
+                   aria-label="首页">
+                    &laquo; 首页
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link pagination-link" 
+                   href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                   data-page="{{ page_obj.previous_page_number }}"
+                   aria-label="上一页">
+                    上一页
+                </a>
+            </li>
+        {% endif %}
+
+        <!-- 显示当前页信息 -->
+        <li class="page-item active" aria-current="page">
+            <span class="page-link">第 {{ page_obj.number }} 页, 共 {{ page_obj.paginator.num_pages }} 页</span>
+        </li>
+
+        {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link pagination-link" 
+                   href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                   data-page="{{ page_obj.next_page_number }}"
+                   aria-label="下一页">
+                    下一页
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link pagination-link" 
+                   href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                   data-page="{{ page_obj.paginator.num_pages }}"
+                   aria-label="末页">
+                    末页 &raquo;
+                </a>
+            </li>
+        {% endif %}
+    </ul>
+    
+    <!-- 分页信息 -->
+    <div class="text-center mt-2">
+        <small class="text-muted">
+            共 {{ page_obj.paginator.count }} 条记录
+        </small>
+    </div>
+</nav>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    initializePaginationLinks();
+});
+
+// Initialize pagination links when content is loaded via HTMX
+document.addEventListener('htmx:afterSwap', function(evt) {
+    if (evt.target.id === 'job-list-container' || evt.target.id === 'candidate-list-container') {
+        initializePaginationLinks();
+    }
+});
+
+function initializePaginationLinks() {
+    // Determine which page we're on
+    const isJobPage = document.getElementById('job-list-container') !== null;
+    const isCandidatePage = document.getElementById('candidate-list-container') !== null;
+    
+    if (!isJobPage && !isCandidatePage) return;
+    
+    // Set up HTMX attributes for pagination links
+    document.querySelectorAll('.pagination-link').forEach(function(link) {
+        if (isJobPage) {
+            link.setAttribute('hx-get', '{% url "jobs:job_list_partial" %}');
+            link.setAttribute('hx-target', '#job-list-container');
+            link.setAttribute('hx-include', '#filter-form');
+        } else if (isCandidatePage) {
+            link.setAttribute('hx-get', '{% url "jobs:candidate_list_partial" %}');  
+            link.setAttribute('hx-target', '#candidate-list-container');
+            link.setAttribute('hx-include', '#candidate-list-form');
+        }
+        
+        // Handle click to update page parameter
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const page = this.getAttribute('data-page');
+            
+            if (isJobPage) {
+                const form = document.getElementById('filter-form');
+                if (form) {
+                    let pageInput = form.querySelector('input[name="page"]');
+                    if (!pageInput) {
+                        pageInput = document.createElement('input');
+                        pageInput.type = 'hidden';
+                        pageInput.name = 'page';
+                        form.appendChild(pageInput);
+                    }
+                    pageInput.value = page;
+                    
+                    // Use HTMX to submit the form
+                    htmx.ajax('GET', '{% url "jobs:job_list_partial" %}', {
+                        target: '#job-list-container',
+                        source: form
+                    });
+                }
+            } else if (isCandidatePage) {
+                const form = document.getElementById('candidate-list-form');
+                if (form) {
+                    let pageInput = form.querySelector('input[name="page"]');
+                    if (!pageInput) {
+                        pageInput = document.createElement('input');
+                        pageInput.type = 'hidden';
+                        pageInput.name = 'page';
+                        form.appendChild(pageInput);
+                    }
+                    pageInput.value = page;
+                    
+                    // Use HTMX to submit the form
+                    htmx.ajax('GET', '{% url "jobs:candidate_list_partial" %}', {
+                        target: '#candidate-list-container',
+                        source: form
+                    });
+                }
+            }
+        });
+    });
+}
+</script>
+{% endif %}

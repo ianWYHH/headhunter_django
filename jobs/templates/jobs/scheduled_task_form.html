@@ -1,0 +1,307 @@
+{% extends 'jobs/base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}{{ action }}定时邮件任务 - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ action }}定时邮件任务</h1>
+    <a href="{% url 'jobs:scheduled_task_list' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> 返回任务列表
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="post" id="task-form">
+            {% csrf_token %}
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">{{ form.name.label }}</label>
+                    {% render_field form.name class="form-control" %}
+                    {% if form.name.errors %}
+                        <div class="text-danger small">{{ form.name.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">{{ form.target_type.label }}</label>
+                    {% render_field form.target_type class="form-select" id="target-type" %}
+                    {% if form.target_type.errors %}
+                        <div class="text-danger small">{{ form.target_type.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3" id="candidate-group-field">
+                    <label class="form-label">{{ form.group.label }}</label>
+                    {% render_field form.group class="form-select" %}
+                    {% if form.group.errors %}
+                        <div class="text-danger small">{{ form.group.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6 mb-3" id="contact-group-field" style="display: none;">
+                    <label class="form-label">{{ form.contact_group.label }}</label>
+                    {% render_field form.contact_group class="form-select" %}
+                    {% if form.contact_group.errors %}
+                        <div class="text-danger small">{{ form.contact_group.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">{{ form.template.label }}</label>
+                    {% render_field form.template class="form-select" %}
+                    {% if form.template.errors %}
+                        <div class="text-danger small">{{ form.template.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">{{ form.from_account.label }}</label>
+                    {% render_field form.from_account class="form-select" %}
+                    {% if form.from_account.errors %}
+                        <div class="text-danger small">{{ form.from_account.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- 多邮箱配置 -->
+            <div class="mb-4">
+                <div class="form-check mb-3">
+                    {% render_field form.use_multi_accounts class="form-check-input" id="use-multi-accounts" %}
+                    <label class="form-check-label" for="use-multi-accounts">
+                        {{ form.use_multi_accounts.label }}
+                    </label>
+                    <div class="form-text">{{ form.use_multi_accounts.help_text }}</div>
+                    {% if form.use_multi_accounts.errors %}
+                        <div class="text-danger small">{{ form.use_multi_accounts.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                
+                <!-- 多邮箱选择 -->
+                <div id="multi-accounts-selection" style="display: none;">
+                    <label class="form-label">{{ form.selected_accounts.label }}</label>
+                    <div class="form-text mb-2">{{ form.selected_accounts.help_text }}</div>
+                    <div class="row">
+                        {% for checkbox in form.selected_accounts %}
+                            <div class="col-md-4 mb-2">
+                                <div class="form-check">
+                                    {{ checkbox.tag }}
+                                    <label class="form-check-label" for="{{ checkbox.id_for_label }}">
+                                        {{ checkbox.choice_label }}
+                                    </label>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    {% if form.selected_accounts.errors %}
+                        <div class="text-danger small">{{ form.selected_accounts.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <hr>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">{{ form.schedule_type.label }}</label>
+                    {% render_field form.schedule_type class="form-select" id="schedule-type" %}
+                    {% if form.schedule_type.errors %}
+                        <div class="text-danger small">{{ form.schedule_type.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">{{ form.start_time.label }}</label>
+                    {% render_field form.start_time class="form-control" %}
+                    {% if form.start_time.errors %}
+                        <div class="text-danger small">{{ form.start_time.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- 每周调度配置 -->
+            <div id="weekly-config" class="mb-3" style="display: none;">
+                <label class="form-label">{{ form.weekdays.label }}</label>
+                <div class="row">
+                    {% for value, label in form.weekdays.field.choices %}
+                    <div class="col-md-3 col-sm-6 mb-2">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="weekdays" value="{{ value }}" id="weekday_{{ value }}">
+                            <label class="form-check-label" for="weekday_{{ value }}">{{ label }}</label>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if form.weekdays.errors %}
+                    <div class="text-danger small">{{ form.weekdays.errors.0 }}</div>
+                {% endif %}
+            </div>
+            
+            <!-- 每月调度配置 -->
+            <div id="monthly-config" class="mb-3" style="display: none;">
+                <label class="form-label">{{ form.day_of_month.label }}</label>
+                {% render_field form.day_of_month class="form-control" %}
+                {% if form.day_of_month.errors %}
+                    <div class="text-danger small">{{ form.day_of_month.errors.0 }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">{{ form.end_time.label }}</label>
+                    {% render_field form.end_time class="form-control" %}
+                    {% if form.end_time.errors %}
+                        <div class="text-danger small">{{ form.end_time.errors.0 }}</div>
+                    {% endif %}
+                    <div class="form-text">可选，留空表示无结束时间</div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="form-check mt-4">
+                        {% render_field form.is_enabled class="form-check-input" %}
+                        <label class="form-check-label" for="{{ form.is_enabled.id_for_label }}">
+                            {{ form.is_enabled.label }}
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">{{ form.description.label }}</label>
+                {% render_field form.description class="form-control" %}
+                {% if form.description.errors %}
+                    <div class="text-danger small">{{ form.description.errors.0 }}</div>
+                {% endif %}
+            </div>
+            
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.non_field_errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            <div class="d-flex justify-content-between">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save"></i> 保存任务
+                </button>
+                <a href="{% url 'jobs:scheduled_task_list' %}" class="btn btn-secondary">取消</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 模板预览模态框 -->
+<div class="modal fade" id="templatePreviewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">邮件模板预览</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="template-preview-content"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const scheduleTypeSelect = document.getElementById('schedule-type');
+    const weeklyConfig = document.getElementById('weekly-config');
+    const monthlyConfig = document.getElementById('monthly-config');
+    const useMultiAccountsCheckbox = document.getElementById('use-multi-accounts');
+    const multiAccountsSelection = document.getElementById('multi-accounts-selection');
+    
+    function updateScheduleConfig() {
+        const selectedType = scheduleTypeSelect.value;
+        
+        // 隐藏所有配置
+        weeklyConfig.style.display = 'none';
+        monthlyConfig.style.display = 'none';
+        
+        // 显示对应的配置
+        if (selectedType === 'weekly') {
+            weeklyConfig.style.display = 'block';
+        } else if (selectedType === 'monthly') {
+            monthlyConfig.style.display = 'block';
+        }
+    }
+    
+    // 监听调度类型变化
+    scheduleTypeSelect.addEventListener('change', updateScheduleConfig);
+    
+    // 初始化显示
+    updateScheduleConfig();
+    
+    // 目标类型选择功能
+    const targetTypeSelect = document.getElementById('target-type');
+    const candidateGroupField = document.getElementById('candidate-group-field');
+    const contactGroupField = document.getElementById('contact-group-field');
+    
+    function updateTargetGroupFields() {
+        if (targetTypeSelect && candidateGroupField && contactGroupField) {
+            const targetType = targetTypeSelect.value;
+            if (targetType === 'candidate_group') {
+                candidateGroupField.style.display = 'block';
+                contactGroupField.style.display = 'none';
+            } else if (targetType === 'contact_group') {
+                candidateGroupField.style.display = 'none';
+                contactGroupField.style.display = 'block';
+            }
+        }
+    }
+    
+    // 监听目标类型变化
+    if (targetTypeSelect) {
+        targetTypeSelect.addEventListener('change', updateTargetGroupFields);
+        // 初始化显示
+        updateTargetGroupFields();
+    }
+    
+    // 多邮箱选择功能
+    function updateMultiAccountsSelection() {
+        if (useMultiAccountsCheckbox && multiAccountsSelection) {
+            if (useMultiAccountsCheckbox.checked) {
+                multiAccountsSelection.style.display = 'block';
+            } else {
+                multiAccountsSelection.style.display = 'none';
+            }
+        }
+    }
+    
+    // 监听多邮箱复选框变化
+    if (useMultiAccountsCheckbox) {
+        useMultiAccountsCheckbox.addEventListener('change', updateMultiAccountsSelection);
+        // 初始化显示
+        updateMultiAccountsSelection();
+    }
+    
+    // 设置默认时间（如果未设置）
+    const startTimeInput = document.querySelector('input[name="start_time"]');
+    if (startTimeInput && !startTimeInput.value) {
+        const now = new Date();
+        now.setMinutes(now.getMinutes() + 30); // 默认30分钟后
+        const localDateTime = now.toISOString().slice(0, 16);
+        startTimeInput.value = localDateTime;
+    }
+    
+    // 模板选择变化时显示预览
+    const templateSelect = document.querySelector('select[name="template"]');
+    if (templateSelect) {
+        templateSelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            if (selectedOption.value) {
+                // 这里可以添加模板预览功能
+                console.log('Selected template:', selectedOption.text);
+            }
+        });
+    }
+});
+</script>
+{% endblock %} 

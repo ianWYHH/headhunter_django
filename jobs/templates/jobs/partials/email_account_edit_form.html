@@ -1,0 +1,241 @@
+{% load widget_tweaks %}
+
+<!-- Edit Account Header -->
+<div class="alert alert-info border-0 mb-4">
+    <div class="d-flex align-items-center">
+        <i class="bi bi-pencil-square me-2 fs-5"></i>
+        <div>
+            <h6 class="mb-1 fw-bold">编辑邮箱账户设置</h6>
+            <small class="text-muted">正在编辑: <strong>{{ account.email_address }}</strong></small>
+        </div>
+    </div>
+</div>
+
+<form id="editEmailAccountForm" method="post" action="{{ action_url }}">
+    {% csrf_token %}
+    
+    <!-- Basic Information Section -->
+    <div class="mb-4">
+        <h6 class="text-muted border-bottom pb-2 mb-3"><i class="bi bi-person-fill"></i> 基本信息</h6>
+        
+        <div class="row">
+            <div class="col-md-8 mb-3">
+                <label class="form-label">{{ form.email_address.label }}</label>
+                {% render_field form.email_address class="form-control" %}
+                <div class="form-text">当前邮箱地址。修改后请确保有访问权限。</div>
+                {% if form.email_address.errors %}
+                    <div class="text-danger small">{{ form.email_address.errors|striptags }}</div>
+                {% endif %}
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">{{ form.daily_send_limit.label }}</label>
+                {% render_field form.daily_send_limit class="form-control" %}
+                <div class="form-text">当前设置: {{ account.daily_send_limit }}</div>
+                {% if form.daily_send_limit.errors %}
+                    <div class="text-danger small">{{ form.daily_send_limit.errors|striptags }}</div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="mb-3">
+            <label class="form-label">{{ form.sender_name.label }}</label>
+            {% render_field form.sender_name class="form-control" %}
+            <div class="form-text">{{ form.sender_name.help_text }}</div>
+            {% if form.sender_name.errors %}
+                <div class="text-danger small">{{ form.sender_name.errors|striptags }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="mb-3">
+            <div class="form-check">
+                {% render_field form.is_default class="form-check-input" %}
+                <label class="form-check-label" for="{{ form.is_default.id_for_label }}">
+                    {{ form.is_default.label }}
+                </label>
+            </div>
+            <div class="form-text">设为默认后，其他邮箱账户的默认状态将被取消。</div>
+            {% if form.is_default.errors %}
+                <div class="text-danger small">{{ form.is_default.errors|striptags }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="mb-3">
+            <label class="form-label">{{ form.signature.label }}</label>
+            {% render_field form.signature class="form-control" rows="3" %}
+            <div class="form-text">邮件签名将自动附加到发送的邮件末尾。支持HTML格式。</div>
+            {% if form.signature.errors %}
+                <div class="text-danger small">{{ form.signature.errors|striptags }}</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- SMTP Configuration Section -->
+    <div class="mb-4">
+        <h6 class="text-muted border-bottom pb-2 mb-3"><i class="bi bi-send-fill"></i> SMTP 发件配置</h6>
+        
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">{{ form.smtp_host.label }}</label>
+                {% render_field form.smtp_host class="form-control" %}
+                <div class="form-text">当前服务器: {{ account.smtp_host }}</div>
+                {% if form.smtp_host.errors %}
+                    <div class="text-danger small">{{ form.smtp_host.errors|striptags }}</div>
+                {% endif %}
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">{{ form.smtp_port.label }}</label>
+                {% render_field form.smtp_port class="form-control" %}
+                <div class="form-text">当前端口: {{ account.smtp_port }}</div>
+                {% if form.smtp_port.errors %}
+                    <div class="text-danger small">{{ form.smtp_port.errors|striptags }}</div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-8 mb-3">
+                <label class="form-label">{{ form.smtp_password.label }}</label>
+                {% render_field form.smtp_password class="form-control" %}
+                <div class="form-text">
+                    <i class="bi bi-shield-lock text-warning"></i> 
+                    <strong>安全提示：</strong>留空表示保持当前密码不变。仅在需要更新密码时填写。
+                </div>
+                {% if form.smtp_password.errors %}
+                    <div class="text-danger small">{{ form.smtp_password.errors|striptags }}</div>
+                {% endif %}
+            </div>
+            <div class="col-md-4 mb-3 d-flex align-items-center">
+                <div class="form-check">
+                    {% render_field form.use_ssl class="form-check-input" %}
+                    <label class="form-check-label" for="{{ form.use_ssl.id_for_label }}">{{ form.use_ssl.label }}</label>
+                </div>
+                {% if form.use_ssl.errors %}
+                    <div class="text-danger small">{{ form.use_ssl.errors|striptags }}</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- IMAP Configuration Section -->
+    <div class="mb-4">
+        <h6 class="text-muted border-bottom pb-2 mb-3"><i class="bi bi-envelope-fill"></i> IMAP 收件配置 <small class="text-muted">(可选)</small></h6>
+        
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">{{ form.imap_host.label }}</label>
+                {% render_field form.imap_host class="form-control" %}
+                <div class="form-text">
+                    {% if account.imap_host %}
+                        当前服务器: {{ account.imap_host }}
+                    {% else %}
+                        未配置IMAP服务器
+                    {% endif %}
+                </div>
+                {% if form.imap_host.errors %}
+                    <div class="text-danger small">{{ form.imap_host.errors|striptags }}</div>
+                {% endif %}
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">{{ form.imap_port.label }}</label>
+                {% render_field form.imap_port class="form-control" %}
+                <div class="form-text">
+                    {% if account.imap_port %}
+                        当前端口: {{ account.imap_port }}
+                    {% else %}
+                        未配置IMAP端口
+                    {% endif %}
+                </div>
+                {% if form.imap_port.errors %}
+                    <div class="text-danger small">{{ form.imap_port.errors|striptags }}</div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="mb-3 form-check">
+            {% render_field form.imap_use_ssl class="form-check-input" %}
+            <label class="form-check-label" for="{{ form.imap_use_ssl.id_for_label }}">{{ form.imap_use_ssl.label }}</label>
+            {% if form.imap_use_ssl.errors %}
+                <div class="text-danger small">{{ form.imap_use_ssl.errors|striptags }}</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Form Actions -->
+    <div class="d-flex justify-content-between align-items-center">
+        <div class="text-muted small">
+            <i class="bi bi-info-circle"></i> 
+            修改设置后将立即生效
+        </div>
+        <div class="gap-2 d-flex">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                <i class="bi bi-x-lg"></i> 取消
+            </button>
+            <button type="submit" class="btn btn-primary">
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" id="editFormSpinner" style="display: none;"></span>
+                <i class="bi bi-check-lg"></i> 保存更改
+            </button>
+        </div>
+    </div>
+    
+    <!-- Error Display Area -->
+    <div id="editFormErrors" class="mt-3" style="display: none;"></div>
+</form>
+
+<script>
+document.getElementById('editEmailAccountForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const form = this;
+    const formData = new FormData(form);
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const spinner = document.getElementById('editFormSpinner');
+    const errorsDiv = document.getElementById('editFormErrors');
+    
+    // Show loading state
+    submitBtn.disabled = true;
+    spinner.style.display = 'inline-block';
+    errorsDiv.style.display = 'none';
+    
+    // Submit form via AJAX
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Success: close modal and refresh page
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editEmailModal'));
+            modal.hide();
+            
+            // Show success message and refresh page
+            location.reload();
+        } else {
+            // Show form errors
+            let errorHtml = '<div class="alert alert-danger"><strong>请修正以下错误：</strong><ul class="mb-0">';
+            for (const [field, errors] of Object.entries(data.errors)) {
+                for (const error of errors) {
+                    errorHtml += `<li>${error}</li>`;
+                }
+            }
+            errorHtml += '</ul></div>';
+            
+            errorsDiv.innerHTML = errorHtml;
+            errorsDiv.style.display = 'block';
+        }
+    })
+    .catch(error => {
+        console.error('提交表单时发生错误:', error);
+        errorsDiv.innerHTML = '<div class="alert alert-danger">提交失败，请重试。</div>';
+        errorsDiv.style.display = 'block';
+    })
+    .finally(() => {
+        // Hide loading state
+        submitBtn.disabled = false;
+        spinner.style.display = 'none';
+    });
+});
+</script>

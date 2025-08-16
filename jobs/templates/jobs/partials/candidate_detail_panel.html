@@ -1,7 +1,8 @@
 {% load widget_tweaks %}
 
-<div id="candidate-detail-panel-{{ candidate.id }}">
-    <ul class="nav nav-tabs" id="detailTab" role="tablist">
+<div id="candidate-detail-panel-{{ candidate.id }}" class="detail-page-container">
+    <div class="detail-tabs">
+        <ul class="nav nav-tabs" id="detailTab" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="nav-link active" id="view-tab-{{ candidate.id }}" data-bs-toggle="tab" data-bs-target="#view-pane-{{ candidate.id }}" type="button">查看详情</button>
         </li>
@@ -20,19 +21,33 @@
                 <i class="bi bi-clock-history"></i> 邮件历史 <span class="htmx-indicator spinner-border spinner-border-sm"></span>
             </button>
         </li>
-    </ul>
-    <div class="tab-content pt-3" id="detailTabContent-{{ candidate.id }}">
+        </ul>
+    </div>
+    <div class="tab-content" id="detailTabContent-{{ candidate.id }}">
         <div class="tab-pane fade show active" id="view-pane-{{ candidate.id }}" role="tabpanel">
-            <h4>{{ candidate.name }}</h4>
-            <p class="text-muted">{{ candidate.emails|join:", " }}</p>
+            <div class="detail-content">
+                <h4>{{ candidate.name }}</h4>
+                <p class="text-muted">{{ candidate.emails|join:", " }}</p>
+                <hr>
+                <div class="row detail-info-row">
+                <div class="col-md-6">
+                    <p><strong>出生年份:</strong> {% if candidate.birth_year_only %}{{ candidate.birth_year_only }}年{% if candidate.age %} ({{ candidate.age }}岁){% endif %}{% else %}N/A{% endif %}</p>
+                    <p><strong>性别:</strong> {{ candidate.get_gender_display|default:"N/A" }}</p>
+                    <p><strong>AI预测职位:</strong> <span class="badge bg-info">{{ candidate.predicted_position|default:"N/A" }}</span></p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>所在地:</strong> {{ candidate.location|default:"N/A" }}</p>
+                    <p><strong>最高学历:</strong> {{ candidate.get_education_level_display|default:"N/A" }}</p>
+                </div>
+            </div>
             <hr>
             <p><strong>个人主页:</strong> <a href="{{ candidate.homepage }}" target="_blank">{{ candidate.homepage|default:"N/A" }}</a></p>
             <p><strong>GitHub:</strong> <a href="{{ candidate.github_profile }}" target="_blank">{{ candidate.github_profile|default:"N/A" }}</a></p>
             <p><strong>领英:</strong> <a href="{{ candidate.linkedin_profile }}" target="_blank">{{ candidate.linkedin_profile|default:"N/A" }}</a></p>
             <p><strong>外部系统ID:</strong> {{ candidate.external_id|default:"N/A" }}</p>
             <p><strong>关键词:</strong> <span class="text-break">{{ candidate.keywords|join:", " | default:"N/A" }}</span></p>
-            <hr>
-            <div class="d-flex justify-content-between align-items-center">
+            
+            <div class="detail-actions d-flex justify-content-between align-items-center">
                 <div>
                     <button class="btn btn-primary btn-sm"
                             hx-get="{% url 'jobs:compose_email' candidate.id %}"
@@ -46,27 +61,44 @@
                 </div>
                 <small class="text-muted">更新于: {{ candidate.updated_at|date:"Y-m-d H-i" }}</small>
             </div>
+            </div>
         </div>
         <div class="tab-pane fade" id="edit-pane-{{ candidate.id }}" role="tabpanel">
-            <!-- (修复) hx-target 指向父级容器，以实现局部刷新 -->
-            <form hx-post="{% url 'jobs:candidate_detail' candidate.id %}" hx-target="#candidate-detail-panel-{{ candidate.id }}" hx-swap="outerHTML">
-                {% csrf_token %}
-                {% for field in form.visible_fields %}
-                    <div class="mb-3">
-                        {{ field.label_tag }}
-                        {% render_field field class="form-control" %}
-                        {% if field.errors %}<div class="text-danger small">{{ field.errors|striptags }}</div>{% endif %}
+            <div class="detail-content">
+                <!-- (修复) hx-target 指向父级容器，以实现局部刷新 -->
+                <form hx-post="{% url 'jobs:candidate_detail' candidate.id %}" hx-target="#candidate-detail-panel-{{ candidate.id }}" hx-swap="outerHTML" class="detail-form">
+                    {% csrf_token %}
+                    {% for field in form.visible_fields %}
+                        <div class="mb-3">
+                            {{ field.label_tag }}
+                            {% if field.field.widget.input_type == 'textarea' %}
+                                {% render_field field class="form-control" rows="4" %}
+                            {% elif field.field.widget.input_type == 'select' %}
+                                {% render_field field class="form-select" %}
+                            {% elif field.field.widget.input_type == 'date' %}
+                                {% render_field field class="form-control" %}
+                            {% else %}
+                                {% render_field field class="form-control" %}
+                            {% endif %}
+                            {% if field.errors %}<div class="text-danger small">{{ field.errors|striptags }}</div>{% endif %}
+                        </div>
+                    {% endfor %}
+                    {% for field in form.hidden_fields %}{{ field }}{% endfor %}
+                    <div class="detail-actions">
+                        <button type="submit" class="btn btn-primary"><span class="htmx-indicator spinner-border spinner-border-sm"></span> 保存更改</button>
                     </div>
-                {% endfor %}
-                {% for field in form.hidden_fields %}{{ field }}{% endfor %}
-                <button type="submit" class="btn btn-primary"><span class="htmx-indicator spinner-border spinner-border-sm"></span> 保存更改</button>
-            </form>
+                </form>
+            </div>
         </div>
         <div class="tab-pane fade" id="match-pane-{{ candidate.id }}" role="tabpanel">
-            <p class="text-center text-muted p-5">点击 "匹配职位" 标签页后开始加载...</p>
+            <div class="detail-content">
+                <p class="text-center text-muted p-5">点击 "匹配职位" 标签页后开始加载...</p>
+            </div>
         </div>
         <div class="tab-pane fade" id="history-pane-{{ candidate.id }}" role="tabpanel">
-            <p class="text-center text-muted p-5">点击 "邮件历史" 标签页后开始加载...</p>
+            <div class="detail-content">
+                <p class="text-center text-muted p-5">点击 "邮件历史" 标签页后开始加载...</p>
+            </div>
         </div>
     </div>
 </div>

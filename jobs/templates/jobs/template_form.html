@@ -28,7 +28,12 @@
                            <label for="ai-model-provider" class="form-label">选择AI模型</label>
                             <select id="ai-model-provider" class="form-select">
                                 {% for key, model in enabled_models.items %}
-                                    <option value="{{ key }}">{{ model.name }}</option>
+                                    <option value="{{ key }}" 
+                        data-description="{{ model.description }}"
+                        {% if key == 'qwen_plus' %}selected{% endif %}>
+                {{ model.name }}
+                {% if model.features.context_length %} ({{ model.features.context_length }}){% endif %}
+            </option>
                                 {% empty %}
                                     <option value="">无可用模型 (请先配置API密钥)</option>
                                 {% endfor %}
@@ -40,6 +45,31 @@
                             <span class="spinner-border spinner-border-sm htmx-indicator" role="status" aria-hidden="true"></span>
                             生成模板内容
                         </button>
+                    </div>
+                    
+                    <!-- AI生成结果显示区域 -->
+                    <div id="ai-generation-result" class="mt-3" style="display: none;">
+                        <div class="alert alert-success">
+                            <h6 class="alert-heading">
+                                <i class="bi bi-check-circle"></i> AI模板生成成功！
+                            </h6>
+                            <p class="mb-0">生成的内容已自动填入下方表单，您可以根据需要进行调整。</p>
+                            <hr>
+                            <div class="small">
+                                <strong>生成的模板名称：</strong> <span id="generated-name"></span><br>
+                                <strong>生成的主题：</strong> <span id="generated-subject"></span><br>
+                                <strong>使用的AI模型：</strong> <span id="used-model"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="ai-generation-error" class="mt-3" style="display: none;">
+                        <div class="alert alert-danger">
+                            <h6 class="alert-heading">
+                                <i class="bi bi-exclamation-triangle"></i> AI生成失败
+                            </h6>
+                            <p class="mb-0" id="error-message"></p>
+                        </div>
                     </div>
                 </div>
             </details>
@@ -67,7 +97,81 @@
                     {% render_field form.body id="ckeditor-editor" %}
                 </div>
                 <div class="form-text">
-                    可用占位符: <code>{{candidate.name}}</code>, <code>{{candidate.salutation}}</code>, <code>{{job.title}}</code>, <code>{{job.company_name}}</code>, <code>{{user.name}}</code>, <code>{{user.signature}}</code>
+                    <details class="mt-2">
+                        <summary class="text-primary fw-bold" style="cursor: pointer;">
+                            <i class="bi bi-info-circle"></i> 智能变量替换说明（点击展开）
+                        </summary>
+                        <div class="card card-body mt-2 bg-light">
+                            <h6 class="fw-bold">📧 可用变量列表</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="text-primary">候选人信息</h6>
+                                    <ul class="list-unstyled small">
+                                        <li><code>&#123;&#123;candidate.name&#125;&#125;</code> - 候选人姓名</li>
+                                        <li><code>&#123;&#123;candidate.salutation&#125;&#125;</code> - 智能尊称（张先生/李女士）</li>
+                                        <li><code>&#123;&#123;candidate.email&#125;&#125;</code> - 邮箱地址</li>
+                                        <li><code>&#123;&#123;candidate.location&#125;&#125;</code> - 所在地</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="text-primary">职位信息</h6>
+                                    <ul class="list-unstyled small">
+                                        <li><code>&#123;&#123;job.title&#125;&#125;</code> - 职位名称</li>
+                                        <li><code>&#123;&#123;job.company_name&#125;&#125;</code> - 公司名称</li>
+                                        <li><code>&#123;&#123;job.salary_range&#125;&#125;</code> - 薪资范围</li>
+                                        <li><code>&#123;&#123;job.locations&#125;&#125;</code> - 工作地点</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="text-primary">用户信息</h6>
+                                    <ul class="list-unstyled small">
+                                        <li><code>&#123;&#123;user.name&#125;&#125;</code> - 您的姓名</li>
+                                        <li><code>&#123;&#123;user.signature&#125;&#125;</code> - 您的签名</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="text-primary">系统信息</h6>
+                                    <ul class="list-unstyled small">
+                                        <li><code>&#123;&#123;today&#125;&#125;</code> - 今天日期</li>
+                                        <li><code>&#123;&#123;current_time&#125;&#125;</code> - 当前时间</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <hr>
+                            <h6 class="fw-bold">🎯 使用示例</h6>
+                            <div class="bg-white p-2 rounded border">
+                                <strong>模板内容：</strong><br>
+                                <small class="text-muted">
+                                    亲爱的 <code>&#123;&#123;candidate.salutation&#125;&#125;</code>，<br><br>
+                                    我是 <code>&#123;&#123;user.name&#125;&#125;</code>，专业猎头顾问。我们有一个 <code>&#123;&#123;job.company_name&#125;&#125;</code> 的 
+                                    <code>&#123;&#123;job.title&#125;&#125;</code> 职位，薪资 <code>&#123;&#123;job.salary_range&#125;&#125;</code>，地点在 
+                                    <code>&#123;&#123;job.locations&#125;&#125;</code>，非常适合您的背景。<br><br>
+                                    期待您的回复！<br><br>
+                                    <code>&#123;&#123;user.signature&#125;&#125;</code>
+                                </small>
+                            </div>
+                            <br>
+                            <div class="bg-white p-2 rounded border">
+                                <strong>实际发送效果：</strong><br>
+                                <small class="text-success">
+                                    亲爱的 张先生，<br><br>
+                                    我是 李猎头，专业猎头顾问。我们有一个 阿里巴巴 的 
+                                    高级Python工程师 职位，薪资 30-50K，地点在 
+                                    北京、上海，非常适合您的背景。<br><br>
+                                    期待您的回复！<br><br>
+                                    李猎头<br>
+                                    手机：138xxxx8888<br>
+                                    邮箱：li@example.com
+                                </small>
+                            </div>
+                            <div class="alert alert-info mt-3 mb-0">
+                                <i class="bi bi-lightbulb"></i> 
+                                <strong>智能提示：</strong>系统会根据收件人的实际信息自动替换这些变量，实现个性化群发！
+                            </div>
+                        </div>
+                    </details>
                 </div>
             </div>
             {% if form.errors %}
@@ -161,15 +265,33 @@
                 })
                 .then(response => response.json())
                 .then(data => {
+                    // 隐藏所有提示
+                    document.getElementById('ai-generation-result').style.display = 'none';
+                    document.getElementById('ai-generation-error').style.display = 'none';
+                    
                     if (data.error) {
-                        alert('AI 生成失败: ' + data.error);
+                        // 显示错误信息
+                        document.getElementById('error-message').textContent = data.error + (data.message ? ': ' + data.message : '');
+                        document.getElementById('ai-generation-error').style.display = 'block';
                     } else {
+                        // 填充表单数据
                         subjectField.value = data.subject || '';
                         if(data.name) { nameField.value = data.name; }
                         if (editorInstance) {
                             // 使用CKEditor的API来设置内容
                             editorInstance.setData(data.body || '');
                         }
+                        
+                        // 显示成功信息
+                        document.getElementById('generated-name').textContent = data.name || '';
+                        document.getElementById('generated-subject').textContent = data.subject || '';
+                        document.getElementById('used-model').textContent = data.model_used || provider;
+                        document.getElementById('ai-generation-result').style.display = 'block';
+                        
+                        // 3秒后自动隐藏成功提示
+                        setTimeout(() => {
+                            document.getElementById('ai-generation-result').style.display = 'none';
+                        }, 5000);
                     }
                 })
                 .catch(error => {

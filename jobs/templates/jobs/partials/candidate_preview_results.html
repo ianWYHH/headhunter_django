@@ -14,6 +14,24 @@
                         <div class="row">
                             <div class="col-md-6 mb-2"><label class="form-label small">姓名</label><input type="text" name="form-{{ index }}-name" value="{{ item.name|default:'' }}" class="form-control form-control-sm"></div>
                             <div class="col-md-6 mb-2"><label class="form-label small">邮箱</label><input type="text" name="form-{{ index }}-emails" value="{{ item.emails|join:', ' }}" class="form-control form-control-sm"></div>
+                            <div class="col-md-6 mb-2"><label class="form-label small">出生年份</label><input type="text" name="form-{{ index }}-birthday" value="{{ item.birthday|default:'' }}" class="form-control form-control-sm" placeholder="YYYY" maxlength="4" pattern="[0-9]{4}"></div>
+                            <div class="col-md-6 mb-2"><label class="form-label small">性别</label><select name="form-{{ index }}-gender" class="form-control form-control-sm">
+                                <option value="未知" {% if item.gender == '未知' or not item.gender %}selected{% endif %}>未知</option>
+                                <option value="男" {% if item.gender == '男' %}selected{% endif %}>男</option>
+                                <option value="女" {% if item.gender == '女' %}selected{% endif %}>女</option>
+                                <option value="其他" {% if item.gender == '其他' %}selected{% endif %}>其他</option>
+                            </select></div>
+                            <div class="col-md-6 mb-2"><label class="form-label small">所在地</label><input type="text" name="form-{{ index }}-location" value="{{ item.location|default:'' }}" class="form-control form-control-sm" placeholder="如：北京、上海、深圳"></div>
+                            <div class="col-md-6 mb-2"><label class="form-label small">最高学历</label><select name="form-{{ index }}-education_level" class="form-control form-control-sm">
+                                <option value="未知" {% if item.education_level == '未知' or not item.education_level %}selected{% endif %}>未知</option>
+                                <option value="高中" {% if item.education_level == '高中' %}selected{% endif %}>高中</option>
+                                <option value="大专" {% if item.education_level == '大专' %}selected{% endif %}>大专</option>
+                                <option value="本科" {% if item.education_level == '本科' %}selected{% endif %}>本科</option>
+                                <option value="硕士" {% if item.education_level == '硕士' %}selected{% endif %}>硕士</option>
+                                <option value="博士" {% if item.education_level == '博士' %}selected{% endif %}>博士</option>
+                                <option value="其他" {% if item.education_level == '其他' %}selected{% endif %}>其他</option>
+                            </select></div>
+                            <div class="col-md-6 mb-2"><label class="form-label small">AI预测职位</label><input type="text" name="form-{{ index }}-predicted_position" value="{{ item.predicted_position|default:'' }}" class="form-control form-control-sm" placeholder="如：Java开发工程师、产品经理"></div>
                             <div class="col-md-6 mb-2"><label class="form-label small">个人主页</label><input type="text" name="form-{{ index }}-homepage" value="{{ item.homepage|default:'' }}" class="form-control form-control-sm"></div>
                             <div class="col-md-6 mb-2"><label class="form-label small">GitHub</label><input type="text" name="form-{{ index }}-github_profile" value="{{ item.github_profile|default:'' }}" class="form-control form-control-sm"></div>
                             <div class="col-md-6 mb-2"><label class="form-label small">领英</label><input type="text" name="form-{{ index }}-linkedin_profile" value="{{ item.linkedin_profile|default:'' }}" class="form-control form-control-sm"></div>

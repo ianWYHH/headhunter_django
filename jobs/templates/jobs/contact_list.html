@@ -1,0 +1,196 @@
+{% extends 'jobs/base.html' %}
+{% load static %}
+
+{% block title %}联系人管理 - 猎头管理系统{% endblock %}
+
+{% block page_icon %}<i class="fas fa-users"></i>{% endblock %}
+
+{% block page_title %}联系人管理{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'jobs:contact_add' %}" class="btn btn-primary">
+    <i class="fas fa-plus"></i> 新增联系人
+</a>
+{% endblock %}
+
+{% block content %}
+    <!-- 统计信息卡片 -->
+    <div class="stats-grid">
+        {% include 'jobs/partials/stats_card.html' with number=stats.total_contacts label="总联系人数" icon="fas fa-users" card_class="bg-primary" width="12" %}
+        {% include 'jobs/partials/stats_card.html' with number=stats.total_companies label="关联公司数" icon="fas fa-building" card_class="bg-success" width="12" %}
+        {% include 'jobs/partials/stats_card.html' with number=stats.total_groups label="联系人分组" icon="fas fa-layer-group" card_class="bg-info" width="12" %}
+        {% include 'jobs/partials/stats_card.html' with number=total_contacts label="筛选结果" icon="fas fa-filter" card_class="bg-warning" width="12" %}
+    </div>
+
+    <!-- 搜索和筛选表单 -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-search"></i> 搜索筛选
+            </h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    {{ form.search_query }}
+                </div>
+                <div class="col-md-2">
+                    {{ form.company }}
+                </div>
+                <div class="col-md-2">
+                    {{ form.position }}
+                </div>
+                <div class="col-md-2">
+                    {{ form.department }}
+                </div>
+                <div class="col-md-2">
+                    {{ form.contact_group }}
+                </div>
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i> 搜索
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 操作按钮 -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="page-actions">
+            <a href="{% url 'jobs:contact_add' %}" class="btn btn-success">
+                <i class="fas fa-plus"></i> 添加联系人
+            </a>
+            <a href="{% url 'jobs:contact_group_list' %}" class="btn btn-info">
+                <i class="fas fa-layer-group"></i> 分组管理
+            </a>
+            <a href="{% url 'jobs:contact_email_send' %}" class="btn btn-warning">
+                <i class="fas fa-envelope"></i> 批量发邮件
+            </a>
+        </div>
+        <div class="d-none d-md-block">
+            <small class="text-muted">共 {{ total_contacts }} 个联系人</small>
+        </div>
+    </div>
+
+    <!-- 联系人列表 -->
+    <div class="card">
+        <div class="card-body">
+            {% if page_obj %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="col-name">姓名</th>
+                                <th class="col-email">邮箱</th>
+                                <th class="col-phone">电话</th>
+                                <th class="col-position">职位</th>
+                                <th class="col-company">公司</th>
+                                <th class="col-department">部门</th>
+                                <th class="col-group">分组</th>
+                                <th class="col-status">状态</th>
+                                <th class="col-time">更新时间</th>
+                                <th class="col-actions">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for contact in page_obj %}
+                            <tr>
+                                <td class="text-truncate-table" title="{{ contact.name }}{% if contact.gender != 'unknown' %} ({{ contact.get_gender_display }}){% endif %}">
+                                    <strong>{{ contact.name }}</strong>
+                                    {% if contact.gender != 'unknown' %}
+                                        <small class="text-muted">({{ contact.get_gender_display }})</small>
+                                    {% endif %}
+                                </td>
+                                <td class="text-truncate-table" title="{{ contact.email }}">
+                                    <a href="mailto:{{ contact.email }}">{{ contact.email }}</a>
+                                </td>
+                                <td class="text-truncate-table" title="{% if contact.phone %}{{ contact.phone }}{% else %}-{% endif %}">
+                                    {% if contact.phone %}
+                                        <a href="tel:{{ contact.phone }}">{{ contact.phone }}</a>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-truncate-table" title="{{ contact.position|default:'-' }}">{{ contact.position|default:"-" }}</td>
+                                <td class="text-truncate-table" title="{{ contact.company|default:'-' }}">{{ contact.company|default:"-" }}</td>
+                                <td class="text-truncate-table" title="{{ contact.department|default:'-' }}">{{ contact.department|default:"-" }}</td>
+                                <td class="text-truncate-table" title="{% for group in contact.contact_groups.all %}{{ group.name }}{% if not forloop.last %}, {% endif %}{% empty %}无分组{% endfor %}">
+                                    {% for group in contact.contact_groups.all %}
+                                        <span class="badge bg-secondary me-1">{{ group.name }}</span>
+                                    {% empty %}
+                                        <span class="text-muted">无分组</span>
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% if contact.is_active %}
+                                        <span class="badge bg-success">有效</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">无效</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small class="text-muted">{{ contact.updated_at|date:"m-d H:i" }}</small>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{% url 'jobs:contact_detail' contact.id %}" 
+                                           class="btn btn-outline-primary btn-sm" title="查看详情">
+                                            <i class="fas fa-eye"></i> 详情
+                                        </a>
+                                        <a href="{% url 'jobs:contact_edit' contact.id %}" 
+                                           class="btn btn-outline-info btn-sm" title="编辑">
+                                            <i class="fas fa-edit"></i> 编辑
+                                        </a>
+                                        <form method="post" action="{% url 'jobs:contact_delete' contact.id %}" 
+                                              style="display: inline-block;"
+                                              onsubmit="return confirm('确定要删除联系人 {{ contact.name }} 吗？')">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-outline-danger btn-sm" title="删除">
+                                                <i class="fas fa-trash"></i> 删除
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 分页 -->
+                {% include 'jobs/partials/pagination.html' %}
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">暂无联系人数据</h5>
+                    <p class="text-muted">您可以 <a href="{% url 'jobs:contact_add' %}">添加新联系人</a></p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    margin-bottom: 1rem;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.btn-group-sm > .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+.badge {
+    font-size: 0.7rem;
+}
+</style>
+{% endblock %}

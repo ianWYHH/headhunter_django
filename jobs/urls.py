@@ -49,9 +49,9 @@ urlpatterns = [
     path('email-settings/template/<int:template_id>/delete/', views.delete_template_view, name='delete_template'),
 
     # 邮箱账户管理
-    path('email-accounts/', views.email_account_list_view, name='email_account_management'),
-    path('email-accounts/add/', views.email_account_add_view, name='email_account_add'),
+    path('email-accounts/', views.email_account_management_view, name='email_account_management'),
     path('email-accounts/<int:account_id>/edit/', views.email_account_edit_view, name='email_account_edit'),
+    path('email-accounts/<int:account_id>/status/', views.check_email_account_status_view, name='check_email_account_status'),
     path('email-accounts/<int:account_id>/delete/', views.email_account_delete_view, name='email_account_delete'),
 
     # API密钥管理
@@ -68,4 +68,56 @@ urlpatterns = [
 
     # 模板加载功能
     path('load-template/', views.load_template_view, name='load_template'),
+
+    # 定时邮件任务管理
+    path('scheduled-tasks/', views.scheduled_task_list_view, name='scheduled_task_list'),
+    path('scheduled-tasks/add/', views.scheduled_task_add_view, name='scheduled_task_add'),
+    path('scheduled-tasks/<int:task_id>/edit/', views.scheduled_task_edit_view, name='scheduled_task_edit'),
+    path('scheduled-tasks/<int:task_id>/delete/', views.scheduled_task_delete_view, name='scheduled_task_delete'),
+    path('scheduled-tasks/<int:task_id>/toggle/', views.scheduled_task_toggle_view, name='scheduled_task_toggle'),
+    path('scheduled-tasks/<int:task_id>/', views.scheduled_task_detail_view, name='scheduled_task_detail'),
+    path('scheduled-tasks/<int:task_id>/preview/', views.scheduled_task_preview_view, name='scheduled_task_preview'),
+    
+    # 多邮箱管理
+    path('multi-email-accounts/', views.multi_email_accounts_view, name='multi_email_accounts'),
+    path('email-accounts/<int:account_id>/test/', views.test_email_account_view, name='test_email_account'),
+    path('email-accounts/stats/', views.email_account_stats_view, name='email_account_stats'),
+    
+    # 统一邮件发送
+    path('unified-email-send/', views.unified_email_send_view, name='unified_email_send'),
+    path('api/template-data/', views.get_template_data_view, name='get_template_data'),
+    path('api/group-members/', views.get_group_members_view, name='get_group_members'),
+    path('api/batch-email-status/', views.get_batch_email_status_view, name='get_batch_email_status'),
+    
+    # 多邮箱批量发送 (保留用于兼容)
+    path('multi-email-send/', views.multi_email_send_view, name='multi_email_send'),
+    
+    # 收件邮件管理
+    path('incoming-emails/', views.incoming_emails_view, name='incoming_emails'),
+    path('incoming-emails/<int:email_id>/', views.incoming_email_detail_view, name='incoming_email_detail'),
+    path('fetch-emails/', views.fetch_emails_view, name='fetch_emails'),
+    
+    # 收件邮件操作API
+    path('emails/<int:email_id>/mark-read/', views.incoming_email_mark_read_view, name='incoming_email_mark_read'),
+    path('emails/<int:email_id>/toggle-important/', views.incoming_email_toggle_important_view, name='incoming_email_toggle_important'),
+    path('emails/<int:email_id>/delete/', views.incoming_email_delete_view, name='incoming_email_delete'),
+    path('emails/mark-all-read/', views.incoming_emails_mark_all_read_view, name='incoming_emails_mark_all_read'),
+    path('emails/batch-operations/', views.incoming_emails_batch_operations_view, name='incoming_emails_batch_operations'),
+    
+    # 联系人管理
+    path('contacts/', views.contact_list_view, name='contact_list'),
+    path('contacts/add/', views.contact_add_view, name='contact_add'),
+    path('contacts/<int:contact_id>/', views.contact_detail_view, name='contact_detail'),
+    path('contacts/<int:contact_id>/edit/', views.contact_edit_view, name='contact_edit'),
+    path('contacts/<int:contact_id>/delete/', views.contact_delete_view, name='contact_delete'),
+    
+    # 联系人分组管理
+    path('contact-groups/', views.contact_group_list_view, name='contact_group_list'),
+    path('contact-groups/add/', views.contact_group_add_view, name='contact_group_add'),
+    path('contact-groups/<int:group_id>/', views.contact_group_detail_view, name='contact_group_detail'),
+    path('contact-groups/<int:group_id>/edit/', views.contact_group_edit_view, name='contact_group_edit'),
+    path('contact-groups/<int:group_id>/delete/', views.contact_group_delete_view, name='contact_group_delete'),
+    
+    # 联系人邮件发送
+    path('contact-email-send/', views.contact_email_send_view, name='contact_email_send'),
 ]

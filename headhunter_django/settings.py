@@ -1,3 +1,5 @@
+import pymysql
+pymysql.install_as_MySQLdb()
 import os
 from pathlib import Path
 from decouple import config
@@ -21,7 +23,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'jobs',
+    'jobs.apps.JobsConfig',
     'django_htmx',
     'widget_tweaks',
 ]
@@ -77,23 +79,11 @@ ENCRYPTION_KEY = config('ENCRYPTION_KEY')
 
 
 # ==============================================================================
-# AI 模型统一配置
-# ==============================================================================
-AI_MODELS = {
-    'qwen_plus': {'name': '通义千问-Plus (推荐)', 'provider': 'qwen', 'base_url': 'https://dashscope.aliyuncs.com/compatible-mode/v1', 'model_name': 'qwen-plus'},
-    'qwen_turbo': {'name': '通义千问-Turbo (高速)', 'provider': 'qwen', 'base_url': 'https://dashscope.aliyuncs.com/compatible-mode/v1', 'model_name': 'qwen-turbo'},
-    'qwen_max': {'name': '通义千问-Max (长文本)', 'provider': 'qwen', 'base_url': 'https://dashscope.aliyuncs.com/compatible-mode/v1', 'model_name': 'qwen-max'},
-    'kimi_32k': {'name': 'Kimi (32K上下文)', 'provider': 'kimi', 'base_url': 'https://api.moonshot.cn/v1', 'model_name': 'moonshot-v1-32k'},
-    'kimi_128k': {'name': 'Kimi (128K上下文)', 'provider': 'kimi', 'base_url': 'https://api.moonshot.cn/v1', 'model_name': 'moonshot-v1-128k'},
-    'doubao_pro_32k': {'name': '豆包-Pro (32K)', 'provider': 'doubao', 'base_url': 'https://ark.cn-beijing.volces.com/api/v3', 'model_name': 'doubao-pro-32k'},
-    'doubao_pro_128k': {'name': '豆包-Pro (128K)', 'provider': 'doubao', 'base_url': 'https://ark.cn-beijing.volces.com/api/v3', 'model_name': 'doubao-pro-128k'},
-    'hunyuan_pro': {'name': '腾讯混元-Pro', 'provider': 'hunyuan', 'base_url': 'https://hunyuan.cloud.tencent.com/openapi/v1', 'model_name': 'hunyuan-pro'},
-    'deepseek_chat': {'name': '深度求索-V2 (通用)', 'provider': 'deepseek', 'base_url': 'https://api.deepseek.com/v1', 'model_name': 'deepseek-chat'},
-    'deepseek_coder': {'name': '深度求索-Coder (代码)', 'provider': 'deepseek', 'base_url': 'https://api.deepseek.com/v1', 'model_name': 'deepseek-coder'},
-    'minimax_abab6_5': {'name': 'MiniMax (abab6.5)', 'provider': 'minimax', 'base_url': 'https://api.minimax.chat/v1/text/chatcompletion-pro', 'model_name': 'abab6.5-chat'},
-    'together_mixtral': {'name': 'Together AI (Mixtral-8x22B)', 'provider': 'together', 'base_url': 'https://api.together.xyz/v1', 'model_name': 'mistralai/Mixtral-8x22B-Instruct-v0.1'},
-    'together_llama3_1_70b': {'name': 'Together AI (Llama3.1-70B)', 'provider': 'together', 'base_url': 'https://api.together.xyz/v1', 'model_name': 'meta-llama/Llama-3.1-70B-Instruct'},
-}
+# Import enhanced AI model configurations
+from .settings_ai_models import *
+
+# Keep legacy AI_MODELS for backward compatibility
+# This is automatically generated from AI_MODEL_CONFIGS
 
 # ==============================================================================
 # 认证系统配置

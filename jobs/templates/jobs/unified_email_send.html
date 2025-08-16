@@ -1,0 +1,520 @@
+{% extends 'jobs/base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}统一邮件发送{% endblock %}
+
+{% block page_title %}统一邮件发送{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-paper-plane"></i> 邮件发送
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="unified-email-form">
+                        {% csrf_token %}
+                        
+                        <!-- 发送类型选择 -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="border-bottom pb-2 mb-3">
+                                    <i class="fas fa-users"></i> 收件人类型
+                                </h6>
+                                <div class="row">
+                                    {% for choice in form.send_type %}
+                                    <div class="col-md-3">
+                                        <div class="form-check">
+                                            {{ choice.tag }}
+                                            <label class="form-check-label" for="{{ choice.id_for_label }}">
+                                                {{ choice.choice_label }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% if form.send_type.errors %}
+                                    <div class="text-danger small">{{ form.send_type.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- 候选人分组选择 -->
+                        <div class="row mb-4" id="candidate-group-section" style="display: none;">
+                            <div class="col-12">
+                                <h6 class="border-bottom pb-2 mb-3">
+                                    <i class="fas fa-users"></i> 候选人分组
+                                </h6>
+                                <div class="mb-3">
+                                    <label for="{{ form.candidate_group.id_for_label }}" class="form-label">
+                                        {{ form.candidate_group.label }}
+                                    </label>
+                                    {{ form.candidate_group }}
+                                    {% if form.candidate_group.errors %}
+                                        <div class="text-danger small">{{ form.candidate_group.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+
+
+                        <!-- 联系人分组选择 -->
+                        <div class="row mb-4" id="contact-group-section" style="display: none;">
+                            <div class="col-12">
+                                <h6 class="border-bottom pb-2 mb-3">
+                                    <i class="fas fa-address-book"></i> 联系人分组
+                                </h6>
+                                <div class="mb-3">
+                                    <label for="{{ form.contact_group.id_for_label }}" class="form-label">
+                                        {{ form.contact_group.label }}
+                                    </label>
+                                    {{ form.contact_group }}
+                                    {% if form.contact_group.errors %}
+                                        <div class="text-danger small">{{ form.contact_group.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+
+
+                        <!-- 邮件模板选择 -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="border-bottom pb-2 mb-3">
+                                    <i class="fas fa-file-alt"></i> 邮件模板
+                                </h6>
+                                <div class="mb-3">
+                                    <label for="{{ form.template.id_for_label }}" class="form-label">
+                                        {{ form.template.label }}
+                                    </label>
+                                    <select name="template" id="{{ form.template.id_for_label }}" class="form-select"
+                                            onchange="loadTemplateData(this.value)">
+                                        <option value="">-- 选择模板或手动编写 --</option>
+                                        {% for template in form.template.field.queryset %}
+                                            <option value="{{ template.id }}">{{ template.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    {% if form.template.errors %}
+                                        <div class="text-danger small">{{ form.template.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+
+
+                        <!-- 邮件内容 -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="border-bottom pb-2 mb-3">
+                                    <i class="fas fa-envelope"></i> 邮件内容
+                                </h6>
+                                <div class="mb-3">
+                                    <label for="{{ form.subject.id_for_label }}" class="form-label">
+                                        {{ form.subject.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.subject }}
+                                    {% if form.subject.errors %}
+                                        <div class="text-danger small">{{ form.subject.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="mb-3">
+                                    <label for="{{ form.content.id_for_label }}" class="form-label">
+                                        {{ form.content.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.content }}
+                                    {% if form.content.errors %}
+                                        <div class="text-danger small">{{ form.content.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 发送设置 -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="border-bottom pb-2 mb-3">
+                                    <i class="fas fa-cog"></i> 发送设置
+                                </h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ form.from_account.id_for_label }}" class="form-label">
+                                                {{ form.from_account.label }} <span class="text-danger">*</span>
+                                            </label>
+                                            {{ form.from_account }}
+                                            {% if form.from_account.errors %}
+                                                <div class="text-danger small">{{ form.from_account.errors.0 }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <div class="form-check">
+                                                {{ form.send_immediately }}
+                                                <label class="form-check-label" for="{{ form.send_immediately.id_for_label }}">
+                                                    {{ form.send_immediately.label }}
+                                                </label>
+                                            </div>
+                                            {% if form.send_immediately.errors %}
+                                                <div class="text-danger small">{{ form.send_immediately.errors.0 }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 提交按钮 -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'jobs:index' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> 返回
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i> 发送邮件
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧帮助信息 -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-users"></i> 已选择分组
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div id="selected-group-info">
+                        <div class="alert alert-secondary text-center">
+                            <i class="fas fa-arrow-left"></i> 请先选择分组
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info mt-3">
+                        <h6><i class="fas fa-magic"></i> 支持的模板变量：</h6>
+                        <div class="row">
+                            <div class="col-12">
+                                <small class="text-muted">
+                                    <strong>通用变量：</strong><br>
+                                    &#123;&#123;candidate.name&#125;&#125; - 姓名<br>
+                                    &#123;&#123;candidate.salutation&#125;&#125; - 智能尊称<br>
+                                    &#123;&#123;candidate.email&#125;&#125; - 邮箱<br>
+                                    &#123;&#123;candidate.company&#125;&#125; - 公司<br>
+                                    &#123;&#123;candidate.position&#125;&#125; - 职位<br>
+                                    &#123;&#123;sender.name&#125;&#125; - 发件人姓名<br>
+                                    &#123;&#123;today&#125;&#125; - 今天日期<br>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 监听发送类型变化
+    const sendTypeRadios = document.querySelectorAll('input[name="send_type"]');
+    const candidateGroupSection = document.getElementById('candidate-group-section');
+    const contactGroupSection = document.getElementById('contact-group-section');
+    
+    function showSection() {
+        // 隐藏所有区域
+        candidateGroupSection.style.display = 'none';
+        contactGroupSection.style.display = 'none';
+        
+        // 显示选中的区域
+        const selectedValue = document.querySelector('input[name="send_type"]:checked')?.value;
+        if (selectedValue === 'candidate_group') {
+            candidateGroupSection.style.display = 'block';
+            updateSelectedGroupInfo('candidate');
+        } else if (selectedValue === 'contact_group') {
+            contactGroupSection.style.display = 'block';
+            updateSelectedGroupInfo('contact');
+        }
+    }
+    
+    // 绑定事件
+    sendTypeRadios.forEach(radio => {
+        radio.addEventListener('change', showSection);
+    });
+    
+    // 初始化显示
+    showSection();
+    
+    // 添加分组选择监听器
+    document.querySelector('#id_candidate_group')?.addEventListener('change', function() {
+        updateSelectedGroupInfo('candidate');
+    });
+    
+    document.querySelector('#id_contact_group')?.addEventListener('change', function() {
+        updateSelectedGroupInfo('contact');
+    });
+    
+    // 更新已选择分组信息
+    function updateSelectedGroupInfo(type) {
+        const infoDiv = document.getElementById('selected-group-info');
+        if (!infoDiv) return;
+        
+        let groupSelect, groupId;
+        if (type === 'candidate') {
+            groupSelect = document.querySelector('#id_candidate_group');
+        } else {
+            groupSelect = document.querySelector('#id_contact_group');
+        }
+        
+        if (!groupSelect || !groupSelect.value) {
+            infoDiv.innerHTML = '<div class="alert alert-secondary text-center"><i class="fas fa-arrow-left"></i> 请先选择分组</div>';
+            return;
+        }
+        
+        groupId = groupSelect.value;
+        const groupName = groupSelect.options[groupSelect.selectedIndex].text;
+        
+        // 显示加载状态
+        infoDiv.innerHTML = '<div class="alert alert-info text-center"><i class="fas fa-spinner fa-spin"></i> 加载分组信息...</div>';
+        
+        // 获取分组成员信息
+        fetch(`/api/group-members/?type=${type}&group_id=${groupId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    displayGroupMembers(data.members, groupName, type);
+                } else {
+                    infoDiv.innerHTML = '<div class="alert alert-warning">加载分组信息失败</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading group members:', error);
+                infoDiv.innerHTML = '<div class="alert alert-warning">网络错误，无法加载分组信息</div>';
+            });
+    }
+    
+    function displayGroupMembers(members, groupName, type) {
+        const infoDiv = document.getElementById('selected-group-info');
+        if (!members || members.length === 0) {
+            infoDiv.innerHTML = `
+                <div class="alert alert-warning">
+                    <h6><i class="fas fa-exclamation-triangle"></i> ${groupName}</h6>
+                    <p class="mb-0">该分组暂无成员</p>
+                </div>
+            `;
+            return;
+        }
+        
+        let membersHtml = `
+            <div class="alert alert-success">
+                <h6><i class="fas fa-users"></i> ${groupName}</h6>
+                <p class="mb-2">共 ${members.length} 个成员</p>
+            </div>
+            <div style="max-height: 250px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 5px; padding: 10px;">
+        `;
+        
+        members.forEach((member, index) => {
+            const displayEmail = type === 'candidate' ? (member.emails && member.emails[0] ? member.emails[0] : '未设置邮箱') : member.email;
+            const displayCompany = member.company || '未设置公司';
+            
+            membersHtml += `
+                <div class="mb-2 pb-2 ${index < members.length - 1 ? 'border-bottom' : ''}">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <strong>${member.name}</strong>
+                            ${member.position ? `<span class="badge bg-secondary ms-1">${member.position}</span>` : ''}
+                        </div>
+                    </div>
+                    <small class="text-muted d-block">${displayCompany}</small>
+                    <small class="text-primary d-block">${displayEmail}</small>
+                </div>
+            `;
+        });
+        
+        membersHtml += '</div>';
+        infoDiv.innerHTML = membersHtml;
+    }
+    
+    // Template loading functionality - Enhanced version
+    window.loadTemplateData = function(templateId) {
+        if (!templateId) return;
+        
+        const subjectInput = document.querySelector('input[name="subject"]');
+        const contentTextarea = document.querySelector('textarea[name="content"]');
+        
+        // Check if there's existing content
+        const hasExistingSubject = subjectInput && subjectInput.value.trim();
+        const hasExistingContent = contentTextarea && contentTextarea.value.trim();
+        
+        if (hasExistingSubject || hasExistingContent) {
+            // Show confirmation modal
+            showOverwriteConfirmation(templateId, subjectInput, contentTextarea);
+        } else {
+            // Directly load template data
+            fetchAndPopulateTemplate(templateId, subjectInput, contentTextarea);
+        }
+    };
+    
+    function showOverwriteConfirmation(templateId, subjectInput, contentTextarea) {
+        const confirmationHtml = `
+            <div class="modal fade" id="templateOverwriteModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                                内容覆盖确认
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-warning">
+                                <i class="fas fa-info-circle me-2"></i>
+                                检测到邮件主题或内容已有内容，您希望如何处理？
+                            </div>
+                            <div class="d-grid gap-2">
+                                <button type="button" class="btn btn-outline-primary" onclick="handleTemplateAction('overwrite', '${templateId}')">
+                                    <i class="fas fa-sync-alt me-2"></i>覆盖现有内容
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" onclick="handleTemplateAction('append', '${templateId}')">
+                                    <i class="fas fa-plus me-2"></i>追加到现有内容
+                                </button>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Remove existing modal if any
+        const existingModal = document.getElementById('templateOverwriteModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        // Add modal to DOM
+        document.body.insertAdjacentHTML('beforeend', confirmationHtml);
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('templateOverwriteModal'));
+        modal.show();
+        
+        // Store references for later use
+        window.currentSubjectInput = subjectInput;
+        window.currentContentTextarea = contentTextarea;
+    }
+    
+    window.handleTemplateAction = function(action, templateId) {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('templateOverwriteModal'));
+        modal.hide();
+        
+        fetchAndPopulateTemplate(templateId, window.currentSubjectInput, window.currentContentTextarea, action);
+    };
+    
+    function fetchAndPopulateTemplate(templateId, subjectInput, contentTextarea, action = 'overwrite') {
+        // Show loading state
+        const originalSubjectValue = subjectInput ? subjectInput.value : '';
+        const originalContentValue = contentTextarea ? contentTextarea.value : '';
+        
+        if (subjectInput) {
+            subjectInput.disabled = true;
+            subjectInput.value = '加载中...';
+        }
+        if (contentTextarea) {
+            contentTextarea.disabled = true;
+            contentTextarea.value = '正在加载模板内容...';
+        }
+        
+        // Fetch template data
+        fetch(`{% url 'jobs:get_template_data' %}?template_id=${templateId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (subjectInput) {
+                        subjectInput.disabled = false;
+                        if (action === 'overwrite') {
+                            subjectInput.value = data.subject || '';
+                        } else if (action === 'append') {
+                            subjectInput.value = originalSubjectValue + (originalSubjectValue ? ' | ' : '') + (data.subject || '');
+                        }
+                    }
+                    
+                    if (contentTextarea) {
+                        contentTextarea.disabled = false;
+                        if (action === 'overwrite') {
+                            contentTextarea.value = data.content || '';
+                        } else if (action === 'append') {
+                            contentTextarea.value = originalContentValue + (originalContentValue ? '\n\n' : '') + (data.content || '');
+                        }
+                    }
+                    
+                    // Show success toast
+                    showToast('success', '模板加载成功', '邮件主题和内容已更新');
+                } else {
+                    throw new Error(data.error || '加载模板失败');
+                }
+            })
+            .catch(error => {
+                console.error('Error loading template:', error);
+                
+                // Restore original values on error
+                if (subjectInput) {
+                    subjectInput.disabled = false;
+                    subjectInput.value = originalSubjectValue;
+                }
+                if (contentTextarea) {
+                    contentTextarea.disabled = false;
+                    contentTextarea.value = originalContentValue;
+                }
+                
+                showToast('error', '加载失败', error.message || '无法加载模板内容，请重试');
+            });
+    }
+    
+    function showToast(type, title, message) {
+        const toastHtml = `
+            <div class="toast align-items-center text-white bg-${type === 'success' ? 'success' : 'danger'} border-0" role="alert">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <strong>${title}</strong><br>
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            </div>
+        `;
+        
+        let toastContainer = document.getElementById('toast-container');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toast-container';
+            toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+            document.body.appendChild(toastContainer);
+        }
+        
+        toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+        const toastElement = toastContainer.lastElementChild;
+        const toast = new bootstrap.Toast(toastElement);
+        toast.show();
+        
+        // Remove toast element after it's hidden
+        toastElement.addEventListener('hidden.bs.toast', () => {
+            toastElement.remove();
+        });
+    }
+});
+</script>
+{% endblock %}

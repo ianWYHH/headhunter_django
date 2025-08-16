@@ -6,23 +6,30 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body" id="add-job-modal-content">
-                <form hx-post="{% url 'jobs:preview_jobs' %}"
-                      hx-target="#add-job-modal-content"
-                      hx-encoding="multipart/form-data">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label for="id_file_upload_job" class="form-label">{{ parse_form.file_upload.label }}</label>
-                        <input type="file" name="file_upload" class="form-control" id="id_file_upload_job">
-                    </div>
-                    <div class="mb-3">
-                        <label for="id_text_content_job" class="form-label">{{ parse_form.text_content.label }}</label>
-                        <textarea name="text_content" cols="40" rows="5" class="form-control" id="id_text_content_job"></textarea>
-                    </div>
-                    <button type="submit" class="btn btn-primary">
-                        <span class="htmx-indicator spinner-border spinner-border-sm"></span>
-                        读取并预览内容
-                    </button>
-                </form>
+                <div class="detail-content">
+                    <form hx-post="{% url 'jobs:preview_jobs' %}"
+                          hx-target="#add-job-modal-content"
+                          hx-encoding="multipart/form-data"
+                          class="detail-form">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="id_file_upload_job" class="form-label">{{ parse_form.file_upload.label }}</label>
+                            <input type="file" name="file_upload" class="form-control" id="id_file_upload_job">
+                            <div class="form-text">支持 TXT、DOCX、PDF 等格式文件</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_text_content_job" class="form-label">{{ parse_form.text_content.label }}</label>
+                            <textarea name="text_content" cols="40" rows="5" class="form-control" id="id_text_content_job" placeholder="请粘贴职位描述文本内容..."></textarea>
+                            <div class="form-text">可直接粘贴职位描述文本</div>
+                        </div>
+                        <div class="detail-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <span class="htmx-indicator spinner-border spinner-border-sm"></span>
+                                <i class="bi bi-search"></i> 读取并预览内容
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>

@@ -1,0 +1,175 @@
+{% extends 'jobs/base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}多邮箱批量发送{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">
+                        <i class="fas fa-envelope-bulk"></i> 多邮箱批量发送邮件
+                    </h4>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post" id="multiEmailForm">
+                        {% csrf_token %}
+                        
+                        <!-- 基本选择 -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.candidate_group.id_for_label }}" class="form-label">
+                                        {{ form.candidate_group.label }}
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.candidate_group|add_class:"form-select" }}
+                                    <div class="form-text">{{ form.candidate_group.help_text }}</div>
+                                    {% if form.candidate_group.errors %}
+                                        <div class="text-danger">{{ form.candidate_group.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.template.id_for_label }}" class="form-label">
+                                        {{ form.template.label }}
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.template|add_class:"form-select" }}
+                                    <div class="form-text">{{ form.template.help_text }}</div>
+                                    {% if form.template.errors %}
+                                        <div class="text-danger">{{ form.template.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 发送模式选择 -->
+                        <div class="mb-4">
+                            <label class="form-label">{{ form.send_mode.label }}</label>
+                            <div class="form-text mb-2">{{ form.send_mode.help_text }}</div>
+                            {% for radio in form.send_mode %}
+                                <div class="form-check">
+                                    {{ radio.tag }}
+                                    <label class="form-check-label" for="{{ radio.id_for_label }}">
+                                        {{ radio.choice_label }}
+                                    </label>
+                                </div>
+                            {% endfor %}
+                            {% if form.send_mode.errors %}
+                                <div class="text-danger">{{ form.send_mode.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- 指定邮箱选择 (多选) -->
+                        <div class="mb-4" id="selectedAccountsDiv" style="display: none;">
+                            <label class="form-label">{{ form.selected_accounts.label }}</label>
+                            <div class="form-text mb-2">{{ form.selected_accounts.help_text }}</div>
+                            <div class="row">
+                                {% for checkbox in form.selected_accounts %}
+                                    <div class="col-md-4 mb-2">
+                                        <div class="form-check">
+                                            {{ checkbox.tag }}
+                                            <label class="form-check-label" for="{{ checkbox.id_for_label }}">
+                                                {{ checkbox.choice_label }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            {% if form.selected_accounts.errors %}
+                                <div class="text-danger">{{ form.selected_accounts.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- 单个邮箱选择 -->
+                        <div class="mb-4" id="singleAccountDiv" style="display: none;">
+                            <div class="form-group">
+                                <label for="{{ form.single_account.id_for_label }}" class="form-label">
+                                    {{ form.single_account.label }}
+                                </label>
+                                {{ form.single_account|add_class:"form-select" }}
+                                <div class="form-text">{{ form.single_account.help_text }}</div>
+                                {% if form.single_account.errors %}
+                                    <div class="text-danger">{{ form.single_account.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- 发送选项 -->
+                        <div class="mb-4">
+                            <div class="form-check">
+                                {{ form.send_immediately|add_class:"form-check-input" }}
+                                <label class="form-check-label" for="{{ form.send_immediately.id_for_label }}">
+                                    {{ form.send_immediately.label }}
+                                </label>
+                                <div class="form-text">{{ form.send_immediately.help_text }}</div>
+                            </div>
+                        </div>
+
+                        <!-- 表单错误 -->
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {{ form.non_field_errors.0 }}
+                            </div>
+                        {% endif %}
+
+                        <!-- 提交按钮 -->
+                        <div class="d-flex gap-3">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i> 发送邮件
+                            </button>
+                            <a href="{% url 'jobs:multi_email_accounts' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-cog"></i> 邮箱管理
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const sendModeRadios = document.querySelectorAll('input[name="send_mode"]');
+    const selectedAccountsDiv = document.getElementById('selectedAccountsDiv');
+    const singleAccountDiv = document.getElementById('singleAccountDiv');
+    
+    function toggleAccountSelections() {
+        const selectedMode = document.querySelector('input[name="send_mode"]:checked').value;
+        
+        // 隐藏所有选择区域
+        selectedAccountsDiv.style.display = 'none';
+        singleAccountDiv.style.display = 'none';
+        
+        // 根据选择的模式显示对应区域
+        if (selectedMode === 'selected_accounts') {
+            selectedAccountsDiv.style.display = 'block';
+        } else if (selectedMode === 'single_account') {
+            singleAccountDiv.style.display = 'block';
+        }
+    }
+    
+    // 绑定事件
+    sendModeRadios.forEach(radio => {
+        radio.addEventListener('change', toggleAccountSelections);
+    });
+    
+    // 初始化显示
+    toggleAccountSelections();
+});
+</script>
+{% endblock %}

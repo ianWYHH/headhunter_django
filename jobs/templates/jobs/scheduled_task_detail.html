@@ -1,0 +1,120 @@
+{% extends 'jobs/base.html' %}
+
+{% block title %}定时任务详情 - {{ task.name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">定时任务详情</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'jobs:scheduled_task_edit' task.id %}" class="btn btn-outline-secondary me-2">编辑任务</a>
+        <a href="{% url 'jobs:scheduled_task_list' %}" class="btn btn-outline-secondary">返回列表</a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">基本信息</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>任务名称:</strong> {{ task.name }}</p>
+                <p><strong>目标分组:</strong> {{ task.group.name }}</p>
+                <p><strong>邮件模板:</strong> {{ task.template.name }}</p>
+                <p><strong>发件邮箱:</strong> {{ task.from_account.email_address }}</p>
+                <p><strong>调度类型:</strong> {{ task.get_schedule_type_display }}</p>
+                <p><strong>调度配置:</strong> {{ task.get_schedule_config_display }}</p>
+                <p><strong>开始时间:</strong> {{ task.start_time|date:"Y-m-d H:i" }}</p>
+                {% if task.end_time %}
+                <p><strong>结束时间:</strong> {{ task.end_time|date:"Y-m-d H:i" }}</p>
+                {% endif %}
+                <p><strong>任务状态:</strong> 
+                    <span class="badge {% if task.status == 'active' %}bg-success{% elif task.status == 'paused' %}bg-warning{% else %}bg-secondary{% endif %}">
+                        {{ task.get_status_display }}
+                    </span>
+                </p>
+                <p><strong>是否启用:</strong> 
+                    <span class="badge {% if task.is_enabled %}bg-success{% else %}bg-secondary{% endif %}">
+                        {{ task.is_enabled|yesno:"是,否" }}
+                    </span>
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">执行状态</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-4">
+                        <h3 class="text-primary">{{ task.total_executions }}</h3>
+                        <small class="text-muted">总执行次数</small>
+                    </div>
+                    <div class="col-4">
+                        <h3 class="text-success">{{ task.successful_executions }}</h3>
+                        <small class="text-muted">成功次数</small>
+                    </div>
+                    <div class="col-4">
+                        <h3 class="text-danger">{{ task.failed_executions }}</h3>
+                        <small class="text-muted">失败次数</small>
+                    </div>
+                </div>
+                <hr>
+                <p><strong>上次执行:</strong> {{ task.last_run_time|date:"Y-m-d H:i"|default:"未执行" }}</p>
+                <p><strong>下次执行:</strong> {{ task.next_run_time|date:"Y-m-d H:i"|default:"未安排" }}</p>
+                <p><strong>创建时间:</strong> {{ task.created_at|date:"Y-m-d H:i" }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12 text-center">
+        <form method="post" action="{% url 'jobs:scheduled_task_preview' task.id %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-info me-2">预览邮件内容</button>
+        </form>
+        <a href="{% url 'jobs:scheduled_task_edit' task.id %}" class="btn btn-primary me-2">编辑任务</a>
+        <button class="btn btn-danger" 
+                data-task-name="{{ task.name|escapejs }}" 
+                data-delete-url="{% url 'jobs:scheduled_task_delete' task.id %}"
+                onclick="confirmDelete(this.dataset.taskName, this.dataset.deleteUrl)">删除任务</button>
+    </div>
+</div>
+
+<!-- 删除确认对话框 -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">确认删除</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>确定要删除定时任务 "<span id="taskName"></span>" 吗？</p>
+                <p class="text-danger">此操作不可撤销！</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <form id="deleteForm" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">确认删除</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function confirmDelete(taskName, deleteUrl) {
+    document.getElementById('taskName').textContent = taskName;
+    document.getElementById('deleteForm').action = deleteUrl;
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+</script>
+{% endblock %} 

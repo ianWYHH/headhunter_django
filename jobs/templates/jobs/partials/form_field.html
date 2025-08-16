@@ -1,0 +1,29 @@
+<!-- 统一表单字段组件 -->
+<div class="mb-3 {% if field_class %}{{ field_class }}{% endif %}">
+    {% if field.label %}
+    <label for="{{ field.id_for_label }}" class="form-label">
+        {{ field.label }}
+        {% if required or field.field.required %}
+            <span class="required">*</span>
+        {% endif %}
+    </label>
+    {% endif %}
+    
+    {% if help_text %}
+    <div class="form-text mb-2">{{ help_text }}</div>
+    {% endif %}
+    
+    {{ field }}
+    
+    {% if field.errors %}
+        {% for error in field.errors %}
+            <div class="invalid-feedback d-block">
+                <i class="fas fa-exclamation-triangle"></i> {{ error }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    {% if field.help_text %}
+        <div class="form-text">{{ field.help_text }}</div>
+    {% endif %}
+</div>

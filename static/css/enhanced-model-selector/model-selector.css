@@ -1,0 +1,114 @@
+
+/* 增强的AI模型选择器样式 */
+.ai-model-selector {
+    position: relative;
+}
+
+.ai-model-option {
+    padding: 12px 15px;
+    border-bottom: 1px solid #e9ecef;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.ai-model-option:hover {
+    background-color: #f8f9fa;
+}
+
+.ai-model-option.selected {
+    background-color: #e3f2fd;
+    border-left: 4px solid #2196f3;
+}
+
+.model-name {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+.model-description {
+    font-size: 0.9em;
+    color: #666;
+    margin-bottom: 6px;
+    line-height: 1.4;
+}
+
+.model-features {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.feature-tag {
+    background: #e3f2fd;
+    color: #1976d2;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75em;
+    font-weight: 500;
+}
+
+.feature-tag.context {
+    background: #f3e5f5;
+    color: #7b1fa2;
+}
+
+.feature-tag.tokens {
+    background: #e8f5e8;
+    color: #388e3c;
+}
+
+.feature-tag.scenario {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+.model-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    max-height: 400px;
+    overflow-y: auto;
+    display: none;
+}
+
+.model-dropdown.show {
+    display: block;
+}
+
+.current-model-display {
+    padding: 10px 15px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background: white;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.current-model-display:after {
+    content: '▼';
+    color: #666;
+    font-size: 0.8em;
+}
+
+.model-search {
+    padding: 10px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.model-search input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
